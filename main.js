@@ -1,8 +1,15 @@
-//TODO: Options Menu
+//TODO: Options Menu; Maybe change buyCheapest to logic event for logic Tick?
 Game.registerMod("autobuy", {
 	init:function() {
-		//TODO: [0,0, URL]
-		Game.Notify(`Autobuy is now enabled!`, '', [16,5 ]);
+		var mod = App.mods["autobuy"];
+		var modDir;
+		if(mod.dir.lastIndexOf('\\') == -1) {
+			modDir =  '../mods/' + (mod.local ? 'local' : 'workshop') + '/' + mod.path;
+		}
+		else {
+			modDir =  '../mods/' + mod.dir.substring(mod.dir.lastIndexOf('\\') + 1);
+		}
+		Game.Notify(`Autobuy is now enabled!`, '', [16,5, modDir + '/icon.png']);
 		this.buildingBulk = 10;
 		setInterval(this.buyCheapest, 100, this.buildingBulk);
 	},
@@ -35,14 +42,30 @@ Game.registerMod("autobuy", {
 			}
 		}
 
+		var mod = App.mods["autobuy"];
+		var modDir;
+		if(mod.dir.lastIndexOf('\\') == -1) {
+			modDir =  '../mods/' + (mod.local ? 'local' : 'workshop') + '/' + mod.path;
+		}
+		else {
+			modDir =  '../mods/' + mod.dir.substring(mod.dir.lastIndexOf('\\') + 1);
+		}
+
 		//Click cheapest option
 		if((cheapestUpgrade == null || cheapestProduct[1] <= cheapestUpgrade.basePrice)) {
 			cheapestProduct[0].buy(bulkAmount);
-			Game.Notify(`Buying cheapest product ${bulkAmount} times: ${cheapestProduct[0].name}`, '', [16,5]);
+			var buildings = modDir + "/orteilBuildings.png";
+			var offsetX = parseInt(cheapestProduct[0].l.querySelectorAll('.icon:not(.off)')[0].style.backgroundPositionX.replace('px', ''));
+			var offsetY = parseInt(cheapestProduct[0].l.querySelectorAll('.icon:not(.off)')[0].style.backgroundPositionY.replace('px', ''));
+			console.log([cheapestProduct[0].name, offsetX, offsetY]);
+			Game.Notify(`Automatically bought ${cheapestProduct[0].name} ${bulkAmount} times`, '', [Math.abs(offsetX)/48,Math.abs(offsetY)/48, buildings]);
 		}
 		else if(cheapestUpgrade != null) {
 			cheapestUpgrade.buy();
-			Game.Notify(`Buying cheapest upgrade: ${cheapestUpgrade.name}`, '', [16,5]);
+			var icons =  modDir + "/orteilIcons.png";
+			var offsetX = parseInt(document.getElementById('upgrade0').style.backgroundPositionX.replace('px', ''));
+			var offsetY = parseInt(document.getElementById('upgrade0').style.backgroundPositionY.replace('px', ''));
+			Game.Notify(`Automatically bought ${cheapestUpgrade.name} upgrade`, '', [Math.abs(offsetX)/48,Math.abs(offsetY)/48, icons]);
 		}
 	}
 });
