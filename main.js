@@ -1,4 +1,3 @@
-//TODO: Options Menu; Maybe change buyCheapest to logic event for logic Tick?
 Game.registerMod("autobuy", {
 	init:function() {
 		var mod = App.mods["autobuy"];
@@ -10,16 +9,22 @@ Game.registerMod("autobuy", {
 			modDir =  '../mods/' + mod.dir.substring(mod.dir.lastIndexOf('\\') + 1);
 		}
 		Game.Notify(`Autobuy is now enabled!`, '', [16,5, modDir + '/icon.png']);
-		this.buildingBulk = 10;
-		setInterval(this.buyCheapest, 100, this.buildingBulk);
+		mod.buildingBulk = 10;
+
+		//Hook up checking and buying the cheaptest thing to logic and trying to inject menu to every draw
+		Game.registerHook('logic', () => {this.buyCheapest()}); 
+		Game.registerHook('draw', () => {this.injectMenu()}); 
 	},
 	save:function(){
-		return String(this.buildingBulk);
+		return String(App.mods["autobuy"].buildingBulk);
 	},
-	load:function(str){
-		this.buildingBulk = parseInt(str || 10);
+	load:function(loadStr){
+		App.mods["autobuy"].buildingBulk = parseInt(loadStr || 10);
+
 	},
-	buyCheapest:function(bulkAmount) {
+	buyCheapest:function() {
+		var mod = App.mods["autobuy"];
+		var bulkAmount = mod.buildingBulk;
 		var upgrades = Array.from(Game.UpgradesInStore).filter((upgrade) => {
 			return upgrade.basePrice <= Game.cookies;
 		});
@@ -34,21 +39,12 @@ Game.registerMod("autobuy", {
 		//First upgrade will always be cheapest
 		var cheapestUpgrade = upgrades[0] || null;
 
-		//Product, Price
+		//[Product, Price]
 		var cheapestProduct = [null, Infinity];
 		for(var i = 0; i < products.length; i++) {
 			if(products[i].getSumPrice(bulkAmount) < cheapestProduct[1]) {
 				cheapestProduct = [products[i], products[i].getSumPrice(bulkAmount)];
 			}
-		}
-
-		var mod = App.mods["autobuy"];
-		var modDir;
-		if(mod.dir.lastIndexOf('\\') == -1) {
-			modDir =  '../mods/' + (mod.local ? 'local' : 'workshop') + '/' + mod.path;
-		}
-		else {
-			modDir =  '../mods/' + mod.dir.substring(mod.dir.lastIndexOf('\\') + 1);
 		}
 
 		//Click cheapest option
@@ -66,5 +62,65 @@ Game.registerMod("autobuy", {
 			var offsetY = parseInt(document.getElementById('upgrade0').style.backgroundPositionY.replace('px', ''));
 			Game.Notify(`Automatically bought ${cheapestUpgrade.name} upgrade`, '', [Math.abs(offsetX)/48,Math.abs(offsetY)/48, icons]);
 		}
+	},
+	injectMenu: () => {
+		//Detect closed menu
+		if(!l('menu').hasChildNodes() || l('menu').querySelector('#autoBuyerOptions') != null) return;
+		//This is basically just ripped from the source code
+
+		//Encasing menu
+		var optionFrame = document.createElement("div");
+		optionFrame.id = "autoBuyerOptions";
+		optionFrame.className = "framed";
+		optionFrame.style.margin = "4px 48px";
+
+		//content div
+		var blockContent = document.createElement("div");
+		blockContent.className = "block";
+		blockContent.style.padding = "0px";
+		blockContent.style.margin = "8px 4px";
+		optionFrame.appendChild(blockContent);
+
+		//subsection
+		var subsection = document.createElement("div");
+		subsection.className = "subsection";
+		subsection.style.padding = "0px";
+		blockContent.appendChild(subsection);
+
+		//Title
+		var title = document.createElement("div");
+		title.className = "title";
+		title.innerHTML = "Autobuy Settings";
+		subsection.appendChild(title);
+
+		//Listing
+		var listing = document.createElement("div");
+		listing.className = "listing";
+		var inputListing = document.createElement("input");
+		inputListing.className = "option";
+		inputListing.onclick = "PlaySound('snd/tick.mp3');" //TODO;
+		inputListing.type ="number";
+		inputListing.value = App.mods["autobuy"].buildingBulk;
+		inputListing.min = 0;
+		inputListing.max = 1000;
+		inputListing.id = "autoBuyerBulkValue";
+
+		var buttonSubmitListing = document.createElement("a");
+		buttonSubmitListing.className = "option smallFancyButton";
+		buttonSubmitListing.innerHTML = "Set bulk amount";
+		buttonSubmitListing.onclick = function() {
+			PlaySound('snd/tick.mp3');
+			var input = document.getElementById('autoBuyerBulkValue');
+			App.mods["autobuy"].buildingBulk = parseInt(input.value);
+		}
+		
+		var labelListing = document.createElement("label");
+		labelListing.innerHTML = "Here you can change the amount of buildings the Autobuyer should buy at once";
+		listing.appendChild(inputListing);
+		listing.appendChild(buttonSubmitListing);
+		listing.appendChild(labelListing);
+		subsection.appendChild(listing);
+
+		l('menu').insertBefore(optionFrame, l('menu').lastChild);
 	}
 });
