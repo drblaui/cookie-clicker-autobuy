@@ -8,3 +8,4 @@ This does not turn off Steam Achievements as it only buys things you could just 
 ## TODOS:
 - Allow turning off buying upgrades
 - Skip price check when bulk buying 0 buildings, so it doesn't always just buys zero buildings
+- Visually highlight the next thing that will be bought 
