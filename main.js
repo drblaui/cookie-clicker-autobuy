@@ -18,7 +18,6 @@ Game.registerMod("autobuy", {
 	},
 	save:function(){
 		var returnThingy = JSON.stringify(App.mods["autobuy"].saveData);
-		console.log(returnThingy);
 		return returnThingy;
 	},
 	load:function(loadStr){
