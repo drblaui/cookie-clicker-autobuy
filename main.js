@@ -64,8 +64,8 @@ Game.registerMod("autobuy", {
 		}
 	},
 	injectMenu: () => {
-		//Detect closed menu
-		if(!l('menu').hasChildNodes() || l('menu').querySelector('#autoBuyerOptions') != null) return;
+		//Detect closed menu or non options menu
+		if(!l('menu').hasChildNodes() || l('menu').querySelector('#autoBuyerOptions') != null || !l('prefsButton').classList.contains('selected')) return;
 		//This is basically just ripped from the source code
 
 		//Encasing menu
