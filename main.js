@@ -28,9 +28,9 @@ Game.registerMod("autobuy", {
 		var upgrades = Array.from(Game.UpgradesInStore).filter((upgrade) => {
 			return upgrade.basePrice <= Game.cookies;
 		});
-		var products = Array.from(Game.ObjectsById).filter((gameObject) => {
+		var products = bulkAmount != 0 ? Array.from(Game.ObjectsById).filter((gameObject) => {
 			return !gameObject.locked && gameObject.getSumPrice(bulkAmount) <= Game.cookies;
-		});
+		}) : [];
 
 		if(upgrades.length == 0 && products.length == 0) {
 			return;
