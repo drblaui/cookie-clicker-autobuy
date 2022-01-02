@@ -25,7 +25,7 @@ Game.registerMod("autobuy", {
 	buyCheapest:function() {
 		var mod = App.mods["autobuy"];
 		var bulkAmount = mod.buildingBulk;
-		
+
 		var upgrades = Object.entries(Game.UpgradesInStore).filter(([index, upgrade]) => {
 			return upgrade.basePrice <= Game.cookies && l('upgrades').querySelector(`#upgrade${index}`) != null;
 		});
@@ -50,7 +50,7 @@ Game.registerMod("autobuy", {
 		}
 
 		//Click cheapest option
-		if((cheapestUpgrade == null || cheapestProduct[1] <= cheapestUpgrade.basePrice)) {
+		if((cheapestUpgrade == null || cheapestProduct[1] <= cheapestUpgrade[1].basePrice)) {
 			cheapestProduct[0].buy(bulkAmount);
 			var buildings = "https://orteil.dashnet.org/cookieclicker/img/buildings.png?v=5";
 			var offsetX = parseInt(cheapestProduct[0].l.querySelectorAll('.icon:not(.off)')[0].style.backgroundPositionX.replace('px', ''));
@@ -58,10 +58,10 @@ Game.registerMod("autobuy", {
 			Game.Notify(`Automatically bought ${cheapestProduct[0].name} ${bulkAmount} times`, '', [Math.abs(offsetX)/48,Math.abs(offsetY)/48, buildings]);
 		}
 		else if(cheapestUpgrade != null) {
-			cheapestUpgrade.buy();
+			cheapestUpgrade[1].buy();
 			var icons = "https://orteil.dashnet.org/cookieclicker/img/icons.png?v=2.031";
-			var offsetX = parseInt(document.getElementById(`upgrade${cheapestUpgrade.htmlIndex}`).style.backgroundPositionX.replace('px', ''));
-			var offsetY = parseInt(document.getElementById(`upgrade${cheapestUpgrade.htmlIndex}`).style.backgroundPositionY.replace('px', ''));
+			var offsetX = parseInt(document.getElementById(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionX.replace('px', ''));
+			var offsetY = parseInt(document.getElementById(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionY.replace('px', ''));
 			Game.Notify(`Automatically bought ${cheapestUpgrade.name} upgrade`, '', [Math.abs(offsetX)/48,Math.abs(offsetY)/48, icons]);
 		}
 	},
