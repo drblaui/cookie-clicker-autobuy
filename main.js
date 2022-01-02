@@ -25,19 +25,32 @@ Game.registerMod("autobuy", {
 	buyCheapest:function() {
 		var mod = App.mods["autobuy"];
 		var bulkAmount = mod.buildingBulk;
-		var upgrades = Array.from(Game.UpgradesInStore).filter((upgrade) => {
-			return upgrade.basePrice <= Game.cookies;
-		});
+
+		/*
+		 * This is probably a bad solution to only use "normal" upgrades,
+		 * but I didn't find another way to get the HTML element to an upgrade
+		 */
+		var upgrades = Array.from(Game.UpgradesInStore);
+		var filteredUpgrades = [];
+		for(var i = 0; i < upgrades.length; i++) {
+			//Last part checks if upgrade is normal upgrade
+			if(upgrades[i].basePrice > Game.cookies || l('upgrades').querySelector(`#upgrade${i}`) == null) {
+				continue;
+			}
+			upgrades[i].htmlIndex = i;
+			filteredUpgrades.push(upgrades[i]);
+		}
+
 		var products = bulkAmount != 0 ? Array.from(Game.ObjectsById).filter((gameObject) => {
 			return !gameObject.locked && gameObject.getSumPrice(bulkAmount) <= Game.cookies;
 		}) : [];
 
-		if(upgrades.length == 0 && products.length == 0) {
+		if(filteredUpgrades.length == 0 && products.length == 0) {
 			return;
 		}
 
 		//First upgrade will always be cheapest
-		var cheapestUpgrade = upgrades[0] || null;
+		var cheapestUpgrade = filteredUpgrades[0] || null;
 
 		//[Product, Price]
 		var cheapestProduct = [null, Infinity];
@@ -58,8 +71,8 @@ Game.registerMod("autobuy", {
 		else if(cheapestUpgrade != null) {
 			cheapestUpgrade.buy();
 			var icons = "https://orteil.dashnet.org/cookieclicker/img/icons.png?v=2.031";
-			var offsetX = parseInt(document.getElementById('upgrade0').style.backgroundPositionX.replace('px', ''));
-			var offsetY = parseInt(document.getElementById('upgrade0').style.backgroundPositionY.replace('px', ''));
+			var offsetX = parseInt(document.getElementById(`upgrade${cheapestUpgrade.htmlIndex}`).style.backgroundPositionX.replace('px', ''));
+			var offsetY = parseInt(document.getElementById(`upgrade${cheapestUpgrade.htmlIndex}`).style.backgroundPositionY.replace('px', ''));
 			Game.Notify(`Automatically bought ${cheapestUpgrade.name} upgrade`, '', [Math.abs(offsetX)/48,Math.abs(offsetY)/48, icons]);
 		}
 	},
