@@ -7,6 +7,5 @@ This mod will automatically buy the cheapest upgrade or building as you play. No
 This does not turn off Steam Achievements as it only buys things you could just click yourself
 ## TODOS:
 - Allow turning off buying upgrades
-- Skip price check when bulk buying 0 buildings, so it doesn't always just buys zero buildings
 - Visually highlight the next thing that will be bought 
 - Add buying timeline in options
