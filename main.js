@@ -69,60 +69,25 @@ Game.registerMod("autobuy", {
 		//Detect closed menu or non options menu
 		if(!l('menu').hasChildNodes() || l('menu').querySelector('#autoBuyerOptions') != null || !l('prefsButton').classList.contains('selected')) return;
 		//This is basically just ripped from the source code
-
-		//Encasing menu
 		var optionFrame = document.createElement("div");
 		optionFrame.id = "autoBuyerOptions";
 		optionFrame.className = "framed";
 		optionFrame.style.margin = "4px 48px";
 
-		//content div
-		var blockContent = document.createElement("div");
-		blockContent.className = "block";
-		blockContent.style.padding = "0px";
-		blockContent.style.margin = "8px 4px";
-		optionFrame.appendChild(blockContent);
-
-		//subsection
-		var subsection = document.createElement("div");
-		subsection.className = "subsection";
-		subsection.style.padding = "0px";
-		blockContent.appendChild(subsection);
-
-		//Title
-		var title = document.createElement("div");
-		title.className = "title";
-		title.innerHTML = "Autobuy Settings";
-		subsection.appendChild(title);
-
-		//Listing
-		var listing = document.createElement("div");
-		listing.className = "listing";
-		var inputListing = document.createElement("input");
-		inputListing.className = "option";
-		inputListing.onclick = "PlaySound('snd/tick.mp3');" //TODO;
-		inputListing.type ="number";
-		inputListing.value = App.mods["autobuy"].buildingBulk;
-		inputListing.min = 0;
-		inputListing.max = 1000;
-		inputListing.id = "autoBuyerBulkValue";
-
-		var buttonSubmitListing = document.createElement("a");
-		buttonSubmitListing.className = "option smallFancyButton";
-		buttonSubmitListing.innerHTML = "Set bulk amount";
-		buttonSubmitListing.onclick = function() {
-			PlaySound('snd/tick.mp3');
-			var input = document.getElementById('autoBuyerBulkValue');
-			App.mods["autobuy"].buildingBulk = parseInt(input.value);
-		}
-		
-		var labelListing = document.createElement("label");
-		labelListing.innerHTML = "Here you can change the amount of buildings the Autobuyer should buy at once";
-		listing.appendChild(inputListing);
-		listing.appendChild(buttonSubmitListing);
-		listing.appendChild(labelListing);
-		subsection.appendChild(listing);
-
+		optionFrame.innerHTML = "<div class='block' style='padding: 0px; margin: 8px 4px'>"+
+							"<div class='subsection' style='padding:0px'>" +
+								"<div class='title'>Autobuy Settings</div>" + 
+								"<div class='listing'>" +
+									"<input class='option' type='number' min='0' max='1000'" +
+										"id='autoBuyerBulkValue' value='" + App.mods["autobuy"].buildingBulk + "'" +
+										"onclick='PlaySound('snd/tick.mp3');'>" +
+									"<a class='option smallFancyButton' onclick='PlaySound('snd/tick.mp3');"+
+										"var input = document.getElementById('autoBuyerBulkValue');" + 
+										"App.mods['autobuy'].buildingBulk = parseInt(input.value);>Set bulk amount</a>" + 
+									"<label>Here you can change the amount of buildings the Autobuyer should buy at once</label>" +
+								"</div>" +
+							"</div>" +
+						   "</div>";
 		l('menu').insertBefore(optionFrame, l('menu').lastChild);
 	}
 });
