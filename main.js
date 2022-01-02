@@ -9,26 +9,41 @@ Game.registerMod("autobuy", {
 			modDir =  '../mods/' + mod.dir.substring(mod.dir.lastIndexOf('\\') + 1);
 		}
 		Game.Notify(`Autobuy is now enabled!`, '', [16,5, modDir + '/icon.png']);
-		mod.buildingBulk = 10;
+		mod.saveData = {buildingBulk: 10, buyUpgrades: true};
 
 		//Hook up checking and buying the cheaptest thing to logic and trying to inject menu to every draw
 		Game.registerHook('logic', () => {this.buyCheapest()}); 
 		Game.registerHook('draw', () => {this.injectMenu()}); 
+		mod.context = this;
 	},
 	save:function(){
-		return String(App.mods["autobuy"].buildingBulk);
+		var returnThingy = JSON.stringify(App.mods["autobuy"].saveData);
+		console.log(returnThingy);
+		return returnThingy;
 	},
 	load:function(loadStr){
-		App.mods["autobuy"].buildingBulk = parseInt(loadStr || 10);
-
+		if(loadStr == "10") {
+			console.log("Yeah its 10")
+			App.mods["autobuy"].context.setDefaultOptions();
+		}
+		try {
+			App.mods["autobuy"].saveData = JSON.parse(loadStr);	
+		}
+		catch (e) {
+			App.mods["autobuy"].context.setDefaultOptions();
+		}
+	},
+	setDefaultOptions: () => {
+		App.mods["autobuy"].saveData.buildingBulk = 10;
+		App.mods["autobuy"].saveData.buyUpgrades = true;
 	},
 	buyCheapest:function() {
 		var mod = App.mods["autobuy"];
-		var bulkAmount = mod.buildingBulk;
+		var bulkAmount = mod.saveData.buildingBulk;
 
-		var upgrades = Object.entries(Game.UpgradesInStore).filter(([index, upgrade]) => {
+		var upgrades = mod.saveData.buyUpgrades ? Object.entries(Game.UpgradesInStore).filter(([index, upgrade]) => {
 			return upgrade.basePrice <= Game.cookies && l('upgrades').querySelector(`#upgrade${index}`) != null;
-		});
+		}) : [];
 
 		var products = bulkAmount != 0 ? Array.from(Game.ObjectsById).filter((gameObject) => {
 			return !gameObject.locked && gameObject.getSumPrice(bulkAmount) <= Game.cookies;
@@ -68,26 +83,44 @@ Game.registerMod("autobuy", {
 	injectMenu: () => {
 		//Detect closed menu or non options menu
 		if(!l('menu').hasChildNodes() || l('menu').querySelector('#autoBuyerOptions') != null || !l('prefsButton').classList.contains('selected')) return;
-		//This is basically just ripped from the source code
+		var mod = App.mods["autobuy"];
+		mod.context.createBasicOptionMenu();
+		//Bulk Amount Option
+		var bulkInput = "<input class='option' type='number' min='0' max='1000'" +
+							"id='autoBuyerBulkValue' value='" + mod.saveData.buildingBulk + "'" +
+							"onclick=\"PlaySound('snd/tick.mp3');\">" +
+						"<a class='option smallFancyButton' onclick=\"PlaySound('snd/tick.mp3');"+
+							"var input = document.getElementById('autoBuyerBulkValue');" + 
+							"App.mods['autobuy'].saveData.buildingBulk = parseInt(input.value);\">Set bulk amount</a>" + 
+						"<label>Here you can change the amount of buildings the Autobuyer should buy at once</label>";
+		mod.context.appendOption(bulkInput);
+
+		//Enable/Disable Upgrade Autobuy 
+		var upgradeAutoBuy = "<a class='option smallFancyButton" + (mod.saveData.buyUpgrades ? '' : ' off') + 
+								"' onclick=\"PlaySound('snd/tick.mp3');" +
+								"App.mods['autobuy'].saveData.buyUpgrades=!App.mods['autobuy'].saveData.buyUpgrades;" +
+								"this.classList.toggle('off');\">" +
+								"Buy upgrades automatically</a>" +
+							"<label> If turned on, upgrades will be considered when checking for cheapest option</label>"
+		mod.context.appendOption(upgradeAutoBuy);
+
+	},
+	createBasicOptionMenu: () => {
 		var optionFrame = document.createElement("div");
 		optionFrame.id = "autoBuyerOptions";
 		optionFrame.className = "framed";
 		optionFrame.style.margin = "4px 48px";
-
 		optionFrame.innerHTML = "<div class='block' style='padding: 0px; margin: 8px 4px'>"+
-							"<div class='subsection' style='padding:0px'>" +
-								"<div class='title'>Autobuy Settings</div>" + 
-								"<div class='listing'>" +
-									"<input class='option' type='number' min='0' max='1000'" +
-										"id='autoBuyerBulkValue' value='" + App.mods["autobuy"].buildingBulk + "'" +
-										"onclick='PlaySound('snd/tick.mp3');'>" +
-									"<a class='option smallFancyButton' onclick='PlaySound('snd/tick.mp3');"+
-										"var input = document.getElementById('autoBuyerBulkValue');" + 
-										"App.mods['autobuy'].buildingBulk = parseInt(input.value);>Set bulk amount</a>" + 
-									"<label>Here you can change the amount of buildings the Autobuyer should buy at once</label>" +
-								"</div>" +
-							"</div>" +
-						   "</div>";
+									"<div class='subsection' style='padding:0px'>" +
+										"<div class='title'>Autobuy Settings</div>" + 
+									"</div>" +
+								"</div>";
 		l('menu').insertBefore(optionFrame, l('menu').lastChild);
+	},
+	appendOption: (optionHTML) => {
+		var optionDiv = document.createElement("div");
+		optionDiv.className = "listing";
+		optionDiv.innerHTML = optionHTML;
+		l('autoBuyerOptions').querySelector('.subsection').appendChild(optionDiv);
 	}
 });
