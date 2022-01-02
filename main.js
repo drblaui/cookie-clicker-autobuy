@@ -25,32 +25,21 @@ Game.registerMod("autobuy", {
 	buyCheapest:function() {
 		var mod = App.mods["autobuy"];
 		var bulkAmount = mod.buildingBulk;
-
-		/*
-		 * This is probably a bad solution to only use "normal" upgrades,
-		 * but I didn't find another way to get the HTML element to an upgrade
-		 */
-		var upgrades = Array.from(Game.UpgradesInStore);
-		var filteredUpgrades = [];
-		for(var i = 0; i < upgrades.length; i++) {
-			//Last part checks if upgrade is normal upgrade
-			if(upgrades[i].basePrice > Game.cookies || l('upgrades').querySelector(`#upgrade${i}`) == null) {
-				continue;
-			}
-			upgrades[i].htmlIndex = i;
-			filteredUpgrades.push(upgrades[i]);
-		}
+		
+		var upgrades = Object.entries(Game.UpgradesInStore).filter(([index, upgrade]) => {
+			return upgrade.basePrice <= Game.cookies && l('upgrades').querySelector(`#upgrade${index}`) != null;
+		});
 
 		var products = bulkAmount != 0 ? Array.from(Game.ObjectsById).filter((gameObject) => {
 			return !gameObject.locked && gameObject.getSumPrice(bulkAmount) <= Game.cookies;
 		}) : [];
 
-		if(filteredUpgrades.length == 0 && products.length == 0) {
+		if(upgrades.length == 0 && products.length == 0) {
 			return;
 		}
 
 		//First upgrade will always be cheapest
-		var cheapestUpgrade = filteredUpgrades[0] || null;
+		var cheapestUpgrade = upgrades[0] || null;
 
 		//[Product, Price]
 		var cheapestProduct = [null, Infinity];
