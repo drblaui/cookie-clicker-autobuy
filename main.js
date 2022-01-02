@@ -22,10 +22,6 @@ Game.registerMod("autobuy", {
 		return returnThingy;
 	},
 	load:function(loadStr){
-		if(loadStr == "10") {
-			console.log("Yeah its 10")
-			App.mods["autobuy"].context.setDefaultOptions();
-		}
 		try {
 			App.mods["autobuy"].saveData = JSON.parse(loadStr);	
 		}
