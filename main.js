@@ -8,12 +8,14 @@ Game.registerMod("autobuy", {
 		else {
 			modDir =  '../mods/' + mod.dir.substring(mod.dir.lastIndexOf('\\') + 1);
 		}
+		mod.modDirectory = modDir;
 		Game.Notify(`Autobuy is now enabled!`, '', [16,5, modDir + '/icon.png']);
 		mod.saveData = {buildingBulk: 10, buyUpgrades: true};
 
 		//Hook up checking and buying the cheaptest thing to logic and trying to inject menu to every draw
 		Game.registerHook('logic', () => {this.buyCheapest()}); 
 		Game.registerHook('draw', () => {this.injectMenu()}); 
+		Game.registerHook('draw', () => {this.hightlightNextPurchase()});
 		mod.context = this;
 	},
 	save:function(){
@@ -79,6 +81,61 @@ Game.registerMod("autobuy", {
 			var offsetX = parseInt(document.getElementById(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionX.replace('px', ''));
 			var offsetY = parseInt(document.getElementById(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionY.replace('px', ''));
 			Game.Notify(`Automatically bought ${cheapestUpgrade[1].name} upgrade`, '', [Math.abs(offsetX)/48,Math.abs(offsetY)/48, icons]);
+		}
+	},
+	//I know this is basically mostly a copy of buyCheapest(), I'll think about abstracting it
+	hightlightNextPurchase: () => {
+		var mod = App.mods["autobuy"];
+		var bulkAmount = mod.saveData.buildingBulk;
+
+		var upgrades = mod.saveData.buyUpgrades ? Object.entries(Game.UpgradesInStore).filter(([index, upgrade]) => {
+			return l('upgrades').querySelector(`#upgrade${index}`) != null;
+		}) : [];
+
+		var products = bulkAmount != 0 ? Array.from(Game.ObjectsById).filter((gameObject) => {
+			return !gameObject.locked;
+		}) : [];
+
+		if(upgrades.length == 0 && products.length == 0) {
+			return;
+		}
+
+		var cheapestUpgrade = upgrades[0] || null;
+
+		var cheapestProduct = [null, Infinity];
+		for(var i = 0; i < products.length; i++) {
+			if(products[i].getSumPrice(bulkAmount) < cheapestProduct[1]) {
+				cheapestProduct = [products[i], products[i].getSumPrice(bulkAmount)];
+			}
+		}
+
+		if((cheapestUpgrade == null || cheapestProduct[1] <= cheapestUpgrade[1].basePrice)) {
+			if(cheapestProduct[0].l.querySelector('#nextPurchaseIndicator') == null) {
+				if(l('nextPurchaseIndicator') != null) {
+					l('nextPurchaseIndicator').remove();
+				}
+				var nextContainer = document.createElement("div"); 
+				nextContainer.id = "nextPurchaseIndicator";
+				nextContainer.style.position = "absolute";
+				nextContainer.style.top = "5px";
+				nextContainer.style.opacity = "1 !important";
+				nextContainer.innerHTML = "<p style='color:green; font-weight:bold;'> Next </p>";
+				cheapestProduct[0].l.appendChild(nextContainer);
+			}
+		}
+		else if(cheapestUpgrade != null) {
+			if(l('upgrade' + cheapestUpgrade[0]).querySelector('#nextPurchaseIndicator') == null) {
+				if(l('nextPurchaseIndicator') != null) {
+					l('nextPurchaseIndicator').remove();
+				}
+				var nextContainer = document.createElement("div"); 
+				nextContainer.id = "nextPurchaseIndicator";
+				nextContainer.style.position = "absolute";
+				nextContainer.style.top = "5px";
+				nextContainer.style.opacity = "1 !important";
+				nextContainer.innerHTML = "<p style='color:green; font-weight:bold;'> Next </p>";
+				l('upgrade' + cheapestUpgrade[0]).appendChild(nextContainer);
+			}
 		}
 	},
 	injectMenu: () => {
