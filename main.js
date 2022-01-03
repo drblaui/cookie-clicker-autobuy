@@ -39,7 +39,6 @@ Game.registerMod("autobuy", {
 		App.mods["autobuy"].saveData.buyUpgrades = true;
 	},
 	buyCheapest:function() {
-		//return;
 		var mod = App.mods["autobuy"];
 		var bulkAmount = mod.saveData.buildingBulk;
 
@@ -47,7 +46,6 @@ Game.registerMod("autobuy", {
 			return upgrade.basePrice <= Game.cookies && l('upgrades').querySelector(`#upgrade${index}`) != null;
 		}) : [];
 
-		//var products = [];
 		var products = bulkAmount != 0 ? Array.from(Game.ObjectsById).filter((gameObject) => {
 			return !gameObject.locked && gameObject.getSumPrice(bulkAmount) <= Game.cookies;
 		}) : [];
@@ -89,14 +87,16 @@ Game.registerMod("autobuy", {
 		var mod = App.mods["autobuy"];
 		mod.context.createBasicOptionMenu();
 		//Bulk Amount Option
-		var bulkInput = "<input class='option' type='number' min='0' max='1000'" +
-							"id='autoBuyerBulkValue' value='" + mod.saveData.buildingBulk + "'" +
-							"onclick=\"PlaySound('snd/tick.mp3');\">" +
-						"<a class='option smallFancyButton' onclick=\"PlaySound('snd/tick.mp3');"+
-							"var input = document.getElementById('autoBuyerBulkValue');" + 
-							"App.mods['autobuy'].saveData.buildingBulk = parseInt(input.value);\">Set bulk amount</a>" + 
-						"<label>Here you can change the amount of buildings the Autobuyer should buy at once</label>";
-		mod.context.appendOption(bulkInput);
+		var bulkSlider = "<div class='sliderBox'>"+
+		  				 	"<div style='float:left;' class='smallFancyButton'>Bulk Buy Amount</div>" + 
+							"<div style='float:right;' class='smallFancyButton' id='autoBuyBulkAmountText'>" + App.mods["autobuy"].saveData.buildingBulk +"</div>" + 
+							"<input class='slider' style='clear:both;' type='range' min='0' max='100' value='" + 
+							App.mods["autobuy"].saveData.buildingBulk + "' id='autoBuyBulkAmount' " +
+							"onchange=\"App.mods['autobuy'].saveData.buildingBulk = parseInt(this.value); l('autoBuyBulkAmountText').innerHTML = this.value;\" " +
+							"onmouseup=\"PlaySound('snd/tick.mp3');\" />"+
+						 "</div>" + 
+						 "<label>Here you can change the amount of buildings the Autobuyer should buy at once</label>";
+		mod.context.appendOption(bulkSlider);
 
 		//Enable/Disable Upgrade Autobuy 
 		var upgradeAutoBuy = "<a class='option smallFancyButton" + (mod.saveData.buyUpgrades ? '' : ' off') + 
