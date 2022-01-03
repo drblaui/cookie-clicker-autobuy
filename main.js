@@ -17,12 +17,18 @@ Game.registerMod("autobuy", {
 		mod.context = this;
 	},
 	save:function(){
-		var returnThingy = JSON.stringify(App.mods["autobuy"].saveData);
-		return returnThingy;
+		return JSON.stringify(App.mods["autobuy"].saveData);
 	},
 	load:function(loadStr){
 		try {
-			App.mods["autobuy"].saveData = JSON.parse(loadStr);	
+			var savedata = App.mods["autobuy"].saveData;
+			savedata = JSON.parse(loadStr);	
+			if(savedata.buildingBulk == undefined || typeof savedata.buildingBulk != "number") {
+				savedata.buildingBulk = 10;
+			}
+			if(savedata.buyUpgrades == undefined || typeof savedata.buyUpgrades != "boolean") {
+				savedata.buyUpgrades = true;
+			}
 		}
 		catch (e) {
 			App.mods["autobuy"].context.setDefaultOptions();
@@ -33,6 +39,7 @@ Game.registerMod("autobuy", {
 		App.mods["autobuy"].saveData.buyUpgrades = true;
 	},
 	buyCheapest:function() {
+		//return;
 		var mod = App.mods["autobuy"];
 		var bulkAmount = mod.saveData.buildingBulk;
 
@@ -40,6 +47,7 @@ Game.registerMod("autobuy", {
 			return upgrade.basePrice <= Game.cookies && l('upgrades').querySelector(`#upgrade${index}`) != null;
 		}) : [];
 
+		//var products = [];
 		var products = bulkAmount != 0 ? Array.from(Game.ObjectsById).filter((gameObject) => {
 			return !gameObject.locked && gameObject.getSumPrice(bulkAmount) <= Game.cookies;
 		}) : [];
