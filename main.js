@@ -38,7 +38,7 @@ Game.registerMod("autobuy", {
 			savedata.buildingBulk = json.buildingBulk;
 			savedata.buyUpgrades = json.buyUpgrades;
 			savedata.buyTimeline = json.buyTimeline;
-			//TODO: Remove dummy timeline item
+			/*: dummy timeline item
 			savedata.buyTimeline.push({
 				name: "Dummy",
 				amount: "1",
@@ -46,7 +46,7 @@ Game.registerMod("autobuy", {
 				backgroundX: 0,
 				backgroundY: 0,
 				time: Game.time
-			});
+			});*/
 		}
 		catch (e) {
 			App.mods["autobuy"].context.setDefaultOptions();
@@ -96,8 +96,8 @@ Game.registerMod("autobuy", {
 				name: cheapestProduct[0].name,
 				amount: bulkAmount,
 				price: cheapestProduct[1],
-				backgroundX: offsetX,
-				backgroundY: offsetY,
+				backgroundX: Math.abs(offsetX)/48,
+				backgroundY: Math.abs(offsetY)/48,
 				time: Game.time
 			});
 		}
@@ -111,8 +111,8 @@ Game.registerMod("autobuy", {
 				name: cheapestUpgrade[1].name,
 				amount: null,
 				price: cheapestProduct[1].basePrice,
-				backgroundX: offsetX,
-				backgroundY: offsetY,
+				backgroundX: Math.abs(offsetX)/48,
+				backgroundY: Math.abs(offsetY)/48,
 				time: Game.time
 			});
 		}
@@ -202,11 +202,11 @@ Game.registerMod("autobuy", {
 			return b.time - a.time;
 		});
 		//mod.context.appendRawOption("<div style='font-size: 17px; font-family: Kavoon, Georgia, serif;'>Buying Timeline (resets with ascension)</div>");
-		var container = "<div style='overflow-y:auto; max-height: 300px;'><br><div style='font-size: 17px; font-family: Kavoon, Georgia, serif;'>Buying Timeline (resets with ascension)</div> <br>";
-		var tooltipStyle = 'visibility:hidden; width:120px; background-color:#555; color:#fff; text-align:center; border-radius:6px; padding:5px 0;' + 
+		var container = "<div style='overflow-y:auto; overflow-x:visible; max-height: 300px;'><br><div style='font-size: 17px; font-family: Kavoon, Georgia, serif;'>Buying Timeline (resets with ascension)</div> <br>";
+		var tooltipStyle = 'visibility:hidden; width:160px; background-color:#555; color:#fff; text-align:center; border-radius:6px; padding:5px 0;' + 
 							'position:absolute; z-index:999999999999999; bottom:110%; left:110%; margin-left:-60px; opacity:0; transition: opacity 0.3s;';
 			for(var i = 0; i < mod.saveData.buyTimeline.length; i++) {
-				container += `<div class="crate" style="background-position: ${mod.saveData.buyTimeline[i].backgroundX}px ${mod.saveData.buyTimeline[i].backgroundY}px; background-image: url(img/icons.png?v=2.043)" onmouseover="this.children[0].style.visibility='visible'; this.children[0].style.opacity=1" onmouseout="this.children[0].style.visibility='hidden'; this.children[0].style.opacity=0"><span style="${tooltipStyle}">${mod.saveData.buyTimeline[i].name} <br> Bought ${(mod.saveData.buyTimeline[i].amount == null || mod.saveData.buyTimeline[i].amount == 1) ? '1 time' : (mod.saveData.buyTimeline[i].amount + " times")}</span></div>`
+				container += `<div class="crate" style="background-position: ${mod.saveData.buyTimeline[i].backgroundX}px ${mod.saveData.buyTimeline[i].backgroundY}px; background-image: url(${mod.saveData.buyTimeline[i].amount == null ? 'img/icons.png?v=2.043' : 'img/buildings.png?v=5'})" onmouseover="this.children[0].style.visibility='visible'; this.children[0].style.opacity=1" onmouseout="this.children[0].style.visibility='hidden'; this.children[0].style.opacity=0"><span style="${tooltipStyle}">${mod.saveData.buyTimeline[i].name} <br> Bought ${(mod.saveData.buyTimeline[i].amount == null || mod.saveData.buyTimeline[i].amount == 1) ? '1 time' : (mod.saveData.buyTimeline[i].amount + " times")}</span></div>`
 			}
 		container += "</div>";
 		mod.context.appendRawOption(container);
