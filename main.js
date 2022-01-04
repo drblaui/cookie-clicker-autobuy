@@ -10,12 +10,13 @@ Game.registerMod("autobuy", {
 		}
 		mod.modDirectory = modDir;
 		Game.Notify(`Autobuy is now enabled!`, '', [16,5, modDir + '/icon.png']);
-		mod.saveData = {"buildingBulk": 10, "buyUpgrades": true, "buyTimeline": []};
+		mod.saveData = {"buildingBulk": 0, "buyUpgrades": false, "buyTimeline": []};
 
 		//Hook up checking and buying the cheaptest thing to logic and trying to inject menu to every draw
 		Game.registerHook('logic', () => {this.buyCheapest()}); 
 		Game.registerHook('draw', () => {this.injectMenu()}); 
 		Game.registerHook('draw', () => {this.hightlightNextPurchase()});
+		Game.registerHook('reincarnate', () => {mod.saveData.buyTimeline = []});
 		mod.context = this;
 	},
 	save:function(){
@@ -25,19 +26,27 @@ Game.registerMod("autobuy", {
 		try {
 			var savedata = App.mods["autobuy"].saveData;
 			var json = JSON.parse(loadStr);	
-			if(savedata.buildingBulk == undefined || typeof savedata.buildingBulk != "number") {
-				savedata.buildingBulk = 10;
-				console.log("buybulk");
+			if(json.buildingBulk == undefined || typeof json.buildingBulk != "number") {
+				json.buildingBulk = 0;
 			}
-			if(savedata.buyUpgrades == undefined || typeof savedata.buyUpgrades != "boolean") {
-				savedata.buyUpgrades = true;
+			if(json.buyUpgrades == undefined || typeof json.buyUpgrades != "boolean") {
+				json.buyUpgrades = false;
 			}
-			if(savedata.buyTimeline == undefined || typeof savedata.buyTimeline != "object") {
-				savedata.buyTimeline = [];
+			if(json.buyTimeline == undefined || typeof json.buyTimeline != "object") {
+				json.buyTimeline = [];
 			}
 			savedata.buildingBulk = json.buildingBulk;
 			savedata.buyUpgrades = json.buyUpgrades;
 			savedata.buyTimeline = json.buyTimeline;
+			//TODO: Remove dummy timeline item
+			savedata.buyTimeline.push({
+				name: "Dummy",
+				amount: "1",
+				price: "10",
+				backgroundX: 0,
+				backgroundY: 0,
+				time: Game.time
+			});
 		}
 		catch (e) {
 			App.mods["autobuy"].context.setDefaultOptions();
@@ -45,8 +54,8 @@ Game.registerMod("autobuy", {
 	},
 	setDefaultOptions: () => {
 		App.mods["autobuy"].saveData = {};
-		App.mods["autobuy"].saveData.buildingBulk = 10;
-		App.mods["autobuy"].saveData.buyUpgrades = true;
+		App.mods["autobuy"].saveData.buildingBulk = 0;
+		App.mods["autobuy"].saveData.buyUpgrades = false;
 		App.mods["autobuy"].saveData.buyTimeline = [];
 	},
 	buyCheapest:function() {
@@ -83,7 +92,6 @@ Game.registerMod("autobuy", {
 			var offsetX = parseInt(cheapestProduct[0].l.querySelectorAll('.icon:not(.off)')[0].style.backgroundPositionX.replace('px', ''));
 			var offsetY = parseInt(cheapestProduct[0].l.querySelectorAll('.icon:not(.off)')[0].style.backgroundPositionY.replace('px', ''));
 			Game.Notify(`Automatically bought ${cheapestProduct[0].name} ${bulkAmount} times`, '', [Math.abs(offsetX)/48,Math.abs(offsetY)/48, buildings]);
-			console.log(mod.saveData);
 			mod.saveData.buyTimeline.push({
 				name: cheapestProduct[0].name,
 				amount: bulkAmount,
@@ -99,6 +107,14 @@ Game.registerMod("autobuy", {
 			var offsetX = parseInt(document.getElementById(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionX.replace('px', ''));
 			var offsetY = parseInt(document.getElementById(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionY.replace('px', ''));
 			Game.Notify(`Automatically bought ${cheapestUpgrade[1].name} upgrade`, '', [Math.abs(offsetX)/48,Math.abs(offsetY)/48, icons]);
+			mod.saveData.buyTimeline.push({
+				name: cheapestUpgrade[1].name,
+				amount: null,
+				price: cheapestProduct[1].basePrice,
+				backgroundX: offsetX,
+				backgroundY: offsetY,
+				time: Game.time
+			});
 		}
 	},
 	//I know this is basically mostly a copy of buyCheapest(), I'll think about abstracting it
@@ -137,6 +153,7 @@ Game.registerMod("autobuy", {
 				nextContainer.style.position = "absolute";
 				nextContainer.style.top = "5px";
 				nextContainer.style.opacity = "1 !important";
+				nextContainer.style.zIndex = "11";
 				nextContainer.innerHTML = "<p style='color:green; font-weight:bold;'> Next </p>";
 				cheapestProduct[0].l.appendChild(nextContainer);
 			}
@@ -151,6 +168,7 @@ Game.registerMod("autobuy", {
 				nextContainer.style.position = "absolute";
 				nextContainer.style.top = "5px";
 				nextContainer.style.opacity = "1 !important";
+				nextContainer.style.zIndex = "11";
 				nextContainer.innerHTML = "<p style='color:green; font-weight:bold;'> Next </p>";
 				l('upgrade' + cheapestUpgrade[0]).appendChild(nextContainer);
 			}
@@ -175,6 +193,23 @@ Game.registerMod("autobuy", {
 
 		//Enable/Disable Upgrade Autobuy 
 		mod.context.appendOptionButton("Buy upgrades automatically", "App.mods['autobuy'].saveData.buyUpgrades=!App.mods['autobuy'].saveData.buyUpgrades;this.classList.toggle('off');", "buyUpgrades", null, "If turned on, upgrades will be considered when checking for cheapest option");
+
+		//Buy timeline display
+		if(mod.saveData.buyTimeline.length == 0) return;
+		//The array should be sorted due to it's nature of how it's being pushed to, but just to be safe
+		mod.saveData.buyTimeline.sort((a, b) => {
+			//The bigger the time, the fresher the purchase
+			return b.time - a.time;
+		});
+		//mod.context.appendRawOption("<div style='font-size: 17px; font-family: Kavoon, Georgia, serif;'>Buying Timeline (resets with ascension)</div>");
+		var container = "<div style='overflow-y:auto; max-height: 300px;'><br><div style='font-size: 17px; font-family: Kavoon, Georgia, serif;'>Buying Timeline (resets with ascension)</div> <br>";
+		var tooltipStyle = 'visibility:hidden; width:120px; background-color:#555; color:#fff; text-align:center; border-radius:6px; padding:5px 0;' + 
+							'position:absolute; z-index:999999999999999; bottom:110%; left:110%; margin-left:-60px; opacity:0; transition: opacity 0.3s;';
+			for(var i = 0; i < mod.saveData.buyTimeline.length; i++) {
+				container += `<div class="crate" style="background-position: ${mod.saveData.buyTimeline[i].backgroundX}px ${mod.saveData.buyTimeline[i].backgroundY}px; background-image: url(img/icons.png?v=2.043)" onmouseover="this.children[0].style.visibility='visible'; this.children[0].style.opacity=1" onmouseout="this.children[0].style.visibility='hidden'; this.children[0].style.opacity=0"><span style="${tooltipStyle}">${mod.saveData.buyTimeline[i].name} <br> Bought ${(mod.saveData.buyTimeline[i].amount == null || mod.saveData.buyTimeline[i].amount == 1) ? '1 time' : (mod.saveData.buyTimeline[i].amount + " times")}</span></div>`
+			}
+		container += "</div>";
+		mod.context.appendRawOption(container);
 
 	},
 	createBasicOptionMenu: () => {
