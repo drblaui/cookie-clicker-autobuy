@@ -10,7 +10,7 @@ Game.registerMod("autobuy", {
 		}
 		mod.modDirectory = modDir;
 		Game.Notify(`Autobuy is now enabled!`, '', [16,5, modDir + '/icon.png']);
-		mod.saveData = {buildingBulk: 10, buyUpgrades: true};
+		mod.saveData = {"buildingBulk": 10, "buyUpgrades": true, "buyTimeline": []};
 
 		//Hook up checking and buying the cheaptest thing to logic and trying to inject menu to every draw
 		Game.registerHook('logic', () => {this.buyCheapest()}); 
@@ -24,21 +24,30 @@ Game.registerMod("autobuy", {
 	load:function(loadStr){
 		try {
 			var savedata = App.mods["autobuy"].saveData;
-			savedata = JSON.parse(loadStr);	
+			var json = JSON.parse(loadStr);	
 			if(savedata.buildingBulk == undefined || typeof savedata.buildingBulk != "number") {
 				savedata.buildingBulk = 10;
+				console.log("buybulk");
 			}
 			if(savedata.buyUpgrades == undefined || typeof savedata.buyUpgrades != "boolean") {
 				savedata.buyUpgrades = true;
 			}
+			if(savedata.buyTimeline == undefined || typeof savedata.buyTimeline != "object") {
+				savedata.buyTimeline = [];
+			}
+			savedata.buildingBulk = json.buildingBulk;
+			savedata.buyUpgrades = json.buyUpgrades;
+			savedata.buyTimeline = json.buyTimeline;
 		}
 		catch (e) {
 			App.mods["autobuy"].context.setDefaultOptions();
 		}
 	},
 	setDefaultOptions: () => {
+		App.mods["autobuy"].saveData = {};
 		App.mods["autobuy"].saveData.buildingBulk = 10;
 		App.mods["autobuy"].saveData.buyUpgrades = true;
+		App.mods["autobuy"].saveData.buyTimeline = [];
 	},
 	buyCheapest:function() {
 		var mod = App.mods["autobuy"];
@@ -74,6 +83,15 @@ Game.registerMod("autobuy", {
 			var offsetX = parseInt(cheapestProduct[0].l.querySelectorAll('.icon:not(.off)')[0].style.backgroundPositionX.replace('px', ''));
 			var offsetY = parseInt(cheapestProduct[0].l.querySelectorAll('.icon:not(.off)')[0].style.backgroundPositionY.replace('px', ''));
 			Game.Notify(`Automatically bought ${cheapestProduct[0].name} ${bulkAmount} times`, '', [Math.abs(offsetX)/48,Math.abs(offsetY)/48, buildings]);
+			console.log(mod.saveData);
+			mod.saveData.buyTimeline.push({
+				name: cheapestProduct[0].name,
+				amount: bulkAmount,
+				price: cheapestProduct[1],
+				backgroundX: offsetX,
+				backgroundY: offsetY,
+				time: Game.time
+			});
 		}
 		else if(cheapestUpgrade != null) {
 			cheapestUpgrade[1].buy();
