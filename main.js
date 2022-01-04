@@ -153,16 +153,10 @@ Game.registerMod("autobuy", {
 							"onmouseup=\"PlaySound('snd/tick.mp3');\" />"+
 						 "</div>" + 
 						 "<label>Here you can change the amount of buildings the Autobuyer should buy at once</label>";
-		mod.context.appendOption(bulkSlider);
+		mod.context.appendRawOption(bulkSlider);
 
 		//Enable/Disable Upgrade Autobuy 
-		var upgradeAutoBuy = "<a class='option smallFancyButton" + (mod.saveData.buyUpgrades ? '' : ' off') + 
-								"' onclick=\"PlaySound('snd/tick.mp3');" +
-								"App.mods['autobuy'].saveData.buyUpgrades=!App.mods['autobuy'].saveData.buyUpgrades;" +
-								"this.classList.toggle('off');\">" +
-								"Buy upgrades automatically</a>" +
-							"<label> If turned on, upgrades will be considered when checking for cheapest option</label>"
-		mod.context.appendOption(upgradeAutoBuy);
+		mod.context.appendOptionButton("Buy upgrades automatically", "App.mods['autobuy'].saveData.buyUpgrades=!App.mods['autobuy'].saveData.buyUpgrades;this.classList.toggle('off');", "buyUpgrades", null, "If turned on, upgrades will be considered when checking for cheapest option");
 
 	},
 	createBasicOptionMenu: () => {
@@ -177,7 +171,22 @@ Game.registerMod("autobuy", {
 								"</div>";
 		l('menu').insertBefore(optionFrame, l('menu').lastChild);
 	},
-	appendOption: (optionHTML) => {
+	/*
+	 * Appends an option into the option menu
+	 * @param {string} buttonString - Text the button will hold
+	 * @param {string} onclick - Function that happens when the button is clicked (this doesn't need PlaySound, as it will automatically be added)
+	 * @param {string} boundSetting - Reference to the corresponding boolean in the saveData that the button will toggle
+	 * @param {string} id - Optional, only use if you want to reference the button itself
+	 * @param {string} label - Optional, only use if you feel the need to explain what the button does next to it
+	 */
+	appendOptionButton: (buttonString, onclick, boundSetting, id = null, label=null) => {
+		var buttonToInject = "<a class='option smallFancyButton" + ((App.mods["autobuy"].saveData[boundSetting]) ? '' : ' off') +
+							 	"' onclick=\"PlaySound('snd/tick.mp3');" + onclick + "\"" + 
+							    ((id != null) ? ("id=" + id) : '') + ">" + buttonString + "</a>" + 
+								((label != null) ? (`<label>${label}</label>`) : '');
+		App.mods["autobuy"].context.appendRawOption(buttonToInject);
+	},
+	appendRawOption: (optionHTML) => {
 		var optionDiv = document.createElement("div");
 		optionDiv.className = "listing";
 		optionDiv.innerHTML = optionHTML;
