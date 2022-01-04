@@ -96,8 +96,8 @@ Game.registerMod("autobuy", {
 				name: cheapestProduct[0].name,
 				amount: bulkAmount,
 				price: cheapestProduct[1],
-				backgroundX: Math.abs(offsetX)/48,
-				backgroundY: Math.abs(offsetY)/48,
+				backgroundX: offsetX,
+				backgroundY: offsetY,
 				time: Game.time
 			});
 		}
@@ -111,8 +111,8 @@ Game.registerMod("autobuy", {
 				name: cheapestUpgrade[1].name,
 				amount: null,
 				price: cheapestProduct[1].basePrice,
-				backgroundX: Math.abs(offsetX)/48,
-				backgroundY: Math.abs(offsetY)/48,
+				backgroundX: offsetX,
+				backgroundY: offsetY,
 				time: Game.time
 			});
 		}
