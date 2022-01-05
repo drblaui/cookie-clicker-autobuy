@@ -5,3 +5,5 @@ This mod will automatically buy the cheapest upgrade or building as you play. No
 >Beware: this has only been tested with the Steam Version and there is a large possibility that it won't work in the Browser version
 
 This does not turn off Steam Achievements as it only buys things you could just click yourself
+
+### This Mod does not take discounts into account. So don't wonder why it doesn't buy some things instantly or buys things first that are a little more expensive 
