@@ -9,7 +9,7 @@ Game.registerMod("autobuy", {
 			modDir =  '../mods/' + mod.dir.substring(mod.dir.lastIndexOf('\\') + 1);
 		}
 		mod.modDirectory = modDir;
-		Game.Notify(`Autobuy is now enabled!`, '', [16,5, modDir + '/icon.png']);
+		Game.Notify(`Autobuy is now enabled!`, '', [16,5, modDir + '/thumbnail.png']);
 		mod.saveData = {"buildingBulk": 0, "buyUpgrades": false, "buyTimeline": []};
 		this.injectNextBuyContainer();
 		//Hook up checking and buying the cheaptest thing to logic and trying to inject menu to every draw
