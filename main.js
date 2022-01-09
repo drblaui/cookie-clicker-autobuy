@@ -224,16 +224,16 @@ Game.registerMod("autobuy", {
 		//Enable/Disable Upgrade Autobuy 
 		mod.context.appendOptionButton("Buy upgrades automatically", "App.mods['autobuy'].saveData.buyUpgrades=!App.mods['autobuy'].saveData.buyUpgrades;this.classList.toggle('off');", "buyUpgrades", null, "If turned on, upgrades will be considered when checking for cheapest option");
 		//Buying Timeline
-		mod.context.appendOptionButton("Create Buying Timeline", "App.mods['autobuy'].saveData.keepTimeline=!App.mods['autobuy'].saveData.keepTimeline; this.classList.toggle('off');", "keepTimeline", null, "This will show you a container of what you bought. (This may cause stutter when you bought a lot)");
+		mod.context.appendOptionButton("Create Buying Timeline", "App.mods['autobuy'].saveData.keepTimeline=!App.mods['autobuy'].saveData.keepTimeline; this.classList.toggle('off'); App.mods['autobuy'].saveData.keepTimeline ? (App.mods['autobuy'].context.generateTimelineString()) : null;", "keepTimeline", null, "This will show you a container of what you bought. (This may cause stutter when you bought a lot)");
 		if(mod.saveData.buyTimeline.length == 0 || !App.mods["autobuy"].saveData.keepTimeline) return;
-		mod.context.appendOptionButton("Clear Timeline", "App.mods['autobuy'].saveData.buyTimeline = [];", null, null, "Clears current timeline");
+		mod.context.appendOptionButton("Clear Timeline", "App.mods['autobuy'].saveData.buyTimeline = []; App.mods['autobuy'].context.generateTimelineString();", null, null, "Clears current timeline");
 		mod.context.appendRawOption(mod.timelineString);
 
 	},
 	generateTimelineString: async () => {
 		//Buy timeline display
 		var mod = App.mods["autobuy"];
-		if(mod.saveData.buyTimeline.length == 0) return;
+		if(!mod.saveData.keepTimeline) return;
 		//The array should be sorted due to it's nature of how it's being pushed to, but just to be safe
 		mod.saveData.buyTimeline.sort((a, b) => {
 			//The bigger the time, the fresher the purchase
