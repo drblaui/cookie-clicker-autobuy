@@ -1,5 +1,6 @@
 Game.registerMod("autobuy", {
-	init:function() {
+	//TODO: LBeautify() for pretty numbers
+	init: () => {
 		var mod = App.mods["autobuy"];
 		var modDir;
 		if(mod.dir.lastIndexOf('\\') == -1) {
@@ -19,10 +20,10 @@ Game.registerMod("autobuy", {
 		Game.registerHook('reincarnate', () => {mod.saveData.buyTimeline = []});
 		mod.context = this;
 	},
-	save:function(){
+	save: () => {
 		return JSON.stringify(App.mods["autobuy"].saveData);
 	},
-	load:function(loadStr){
+	load: (loadStr) => {
 		try {
 			var savedata = App.mods["autobuy"].saveData;
 			var json = JSON.parse(loadStr);	
@@ -58,7 +59,7 @@ Game.registerMod("autobuy", {
 		App.mods["autobuy"].saveData.buyUpgrades = false;
 		App.mods["autobuy"].saveData.buyTimeline = [];
 	},
-	buyCheapest:function() {
+	buyCheapest: () => {
 		var mod = App.mods["autobuy"];
 		var bulkAmount = mod.saveData.buildingBulk;
 
