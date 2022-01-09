@@ -1,6 +1,6 @@
 Game.registerMod("autobuy", {
 	//TODO: LBeautify() for pretty numbers
-	init: () => {
+	init: function (){
 		var mod = App.mods["autobuy"];
 		var modDir;
 		if(mod.dir.lastIndexOf('\\') == -1) {
@@ -11,13 +11,18 @@ Game.registerMod("autobuy", {
 		}
 		mod.modDirectory = modDir;
 		Game.Notify(`Autobuy is now enabled!`, '', [16,5, modDir + '/thumbnail.png']);
-		mod.saveData = {"buildingBulk": 0, "buyUpgrades": false, "buyTimeline": []};
+		mod.saveData = {"buildingBulk": 0, "buyUpgrades": false, "buyTimeline": [], "keepTimeline": false};
+		//console.log(this);
 		this.injectNextBuyContainer();
 		//Hook up checking and buying the cheaptest thing to logic and trying to inject menu to every draw
 		Game.registerHook('logic', () => {this.buyCheapest()}); 
 		Game.registerHook('draw', () => {this.injectMenu()}); 
 		Game.registerHook('draw', () => {this.hightlightNextPurchase()});
-		Game.registerHook('reincarnate', () => {mod.saveData.buyTimeline = []});
+		Game.registerHook('reincarnate', () => {
+			mod.saveData.buyTimeline = [];
+			mod.timelineString = "<div style='overflow-y:auto; overflow-x:visible; max-height: 300px;'><br><div style='font-size: 17px; font-family: Kavoon, Georgia, serif;'>Buying Timeline (resets with ascension)</div> <br> </div>";
+			//mod.context.generateTimelineString();
+		});
 		mod.context = this;
 	},
 	save: () => {
@@ -36,9 +41,13 @@ Game.registerMod("autobuy", {
 			if(json.buyTimeline == undefined || typeof json.buyTimeline != "object") {
 				json.buyTimeline = [];
 			}
+			if(json.keepTimeline == undefined || typeof json.keepTimeline != "boolean") {
+				json.keepTimeline = false;
+			}
 			savedata.buildingBulk = json.buildingBulk;
 			savedata.buyUpgrades = json.buyUpgrades;
 			savedata.buyTimeline = json.buyTimeline;
+			savedata.keepTimeline = json.keepTimeline;
 			/*: dummy timeline item
 			savedata.buyTimeline.push({
 				name: "Dummy",
@@ -48,6 +57,7 @@ Game.registerMod("autobuy", {
 				backgroundY: 0,
 				time: Game.time
 			});*/
+			App.mods["autobuy"].context.generateTimelineString();
 		}
 		catch (e) {
 			App.mods["autobuy"].context.setDefaultOptions();
@@ -58,6 +68,7 @@ Game.registerMod("autobuy", {
 		App.mods["autobuy"].saveData.buildingBulk = 0;
 		App.mods["autobuy"].saveData.buyUpgrades = false;
 		App.mods["autobuy"].saveData.buyTimeline = [];
+		App.mods["autobuy"].saveData.keepTimeline = false;
 	},
 	buyCheapest: () => {
 		var mod = App.mods["autobuy"];
@@ -93,14 +104,18 @@ Game.registerMod("autobuy", {
 			var offsetX = parseInt(cheapestProduct[0].l.querySelectorAll('.icon:not(.off)')[0].style.backgroundPositionX.replace('px', ''));
 			var offsetY = parseInt(cheapestProduct[0].l.querySelectorAll('.icon:not(.off)')[0].style.backgroundPositionY.replace('px', ''));
 			Game.Notify(`Automatically bought ${cheapestProduct[0].name} ${bulkAmount} times`, '', [Math.abs(offsetX)/48,Math.abs(offsetY)/48, buildings]);
-			mod.saveData.buyTimeline.push({
-				name: cheapestProduct[0].name,
-				amount: bulkAmount,
-				price: cheapestProduct[1],
-				backgroundX: offsetX,
-				backgroundY: offsetY,
-				time: Game.time
-			});
+			if(mod.saveData.keepTimeline) {
+				var product = {
+					name: cheapestProduct[0].name,
+					amount: bulkAmount,
+					price: cheapestProduct[1],
+					backgroundX: offsetX,
+					backgroundY: offsetY,
+					time: Game.time
+				}
+				mod.saveData.buyTimeline.push(product);
+				mod.context.appendToTimeline(product);
+			}
 		}
 		else if(cheapestUpgrade != null) {
 			cheapestUpgrade[1].buy();
@@ -108,14 +123,18 @@ Game.registerMod("autobuy", {
 			var offsetX = parseInt(document.getElementById(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionX.replace('px', ''));
 			var offsetY = parseInt(document.getElementById(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionY.replace('px', ''));
 			Game.Notify(`Automatically bought ${cheapestUpgrade[1].name} upgrade`, '', [Math.abs(offsetX)/48,Math.abs(offsetY)/48, icons]);
-			mod.saveData.buyTimeline.push({
-				name: cheapestUpgrade[1].name,
-				amount: null,
-				price: cheapestProduct[1].basePrice,
-				backgroundX: offsetX,
-				backgroundY: offsetY,
-				time: Game.time
-			});
+			if(mod.saveData.keepTimeline) {
+				var upgrade = {
+					name: cheapestUpgrade[1].name,
+					amount: null,
+					price: cheapestProduct[1].basePrice,
+					backgroundX: offsetX,
+					backgroundY: offsetY,
+					time: Game.time
+				}
+				mod.saveData.buyTimeline.push(upgrade);
+				mod.context.appendToTimeline(upgrade);
+			}
 		}
 	},
 	//I know this is basically mostly a copy of buyCheapest(), I'll think about abstracting it
@@ -204,24 +223,40 @@ Game.registerMod("autobuy", {
 
 		//Enable/Disable Upgrade Autobuy 
 		mod.context.appendOptionButton("Buy upgrades automatically", "App.mods['autobuy'].saveData.buyUpgrades=!App.mods['autobuy'].saveData.buyUpgrades;this.classList.toggle('off');", "buyUpgrades", null, "If turned on, upgrades will be considered when checking for cheapest option");
+		//Buying Timeline
+		mod.context.appendOptionButton("Create Buying Timeline", "App.mods['autobuy'].saveData.keepTimeline=!App.mods['autobuy'].saveData.keepTimeline; this.classList.toggle('off');", "keepTimeline", null, "This will show you a container of what you bought. (This may cause stutter when you bought a lot)");
+		if(mod.saveData.buyTimeline.length == 0 || !App.mods["autobuy"].saveData.keepTimeline) return;
+		mod.context.appendOptionButton("Clear Timeline", "App.mods['autobuy'].saveData.buyTimeline = [];", null, null, "Clears current timeline");
+		mod.context.appendRawOption(mod.timelineString);
 
+	},
+	generateTimelineString: async () => {
 		//Buy timeline display
+		var mod = App.mods["autobuy"];
 		if(mod.saveData.buyTimeline.length == 0) return;
 		//The array should be sorted due to it's nature of how it's being pushed to, but just to be safe
 		mod.saveData.buyTimeline.sort((a, b) => {
 			//The bigger the time, the fresher the purchase
 			return b.time - a.time;
 		});
-		//mod.context.appendRawOption("<div style='font-size: 17px; font-family: Kavoon, Georgia, serif;'>Buying Timeline (resets with ascension)</div>");
 		var container = "<div style='overflow-y:auto; overflow-x:visible; max-height: 300px;'><br><div style='font-size: 17px; font-family: Kavoon, Georgia, serif;'>Buying Timeline (resets with ascension)</div> <br>";
 		var tooltipStyle = 'visibility:hidden; width:160px; background-color:#555; color:#fff; text-align:center; border-radius:6px; padding:5px 0;' + 
 							'position:absolute; z-index:999999999999999; bottom:110%; left:110%; margin-left:-60px; opacity:0; transition: opacity 0.3s;';
 			for(var i = 0; i < mod.saveData.buyTimeline.length; i++) {
-				container += `<div class="crate enabled" style="background-position: ${mod.saveData.buyTimeline[i].backgroundX}px ${mod.saveData.buyTimeline[i].backgroundY}px; background-image: url(${mod.saveData.buyTimeline[i].amount == null ? 'img/icons.png?v=2.043' : 'img/buildings.png?v=5'})" onmouseover="this.children[0].style.visibility='visible'; this.children[0].style.opacity=1" onmouseout="this.children[0].style.visibility='hidden'; this.children[0].style.opacity=0"><span style="${tooltipStyle}">${mod.saveData.buyTimeline[i].name} <br> Bought ${(mod.saveData.buyTimeline[i].amount == null || mod.saveData.buyTimeline[i].amount == 1) ? '1 time' : (mod.saveData.buyTimeline[i].amount + " times")}</span></div>`
+				container += `<div class="crate enabled" style="background-position: ${mod.saveData.buyTimeline[i].backgroundX}px ${mod.saveData.buyTimeline[i].backgroundY}px; background-image: url(${mod.saveData.buyTimeline[i].amount == null ? 'img/icons.png?v=2.043' : 'img/buildings.png?v=5'})" onmouseover="this.children[0].style.visibility='visible'; this.children[0].style.opacity=1" onmouseout="this.children[0].style.visibility='hidden'; this.children[0].style.opacity=0"><span style="${tooltipStyle}">${mod.saveData.buyTimeline[i].name} <br> Bought ${(mod.saveData.buyTimeline[i].amount == null || mod.saveData.buyTimeline[i].amount == 1) ? '1 time' : (mod.saveData.buyTimeline[i].amount + " times")}</span></div>`;
 			}
 		container += "</div>";
-		mod.context.appendRawOption(container);
-
+		mod.timelineString = container;
+		//console.log(timelineSring);
+	},
+	appendToTimeline: async (timelineObject) => {
+		var mod = App.mods["autobuy"];
+		var tl = mod.timelineString.slice(0,-6);
+		var tooltipStyle = 'visibility:hidden; width:160px; background-color:#555; color:#fff; text-align:center; border-radius:6px; padding:5px 0;' + 
+							'position:absolute; z-index:999999999999999; bottom:110%; left:110%; margin-left:-60px; opacity:0; transition: opacity 0.3s;';
+		tl += `<div class="crate enabled" style="background-position: ${timelineObject.backgroundX}px ${timelineObject.backgroundY}px; background-image: url(${timelineObject.amount == null ? 'img/icons.png?v=2.043' : 'img/buildings.png?v=5'})" onmouseover="this.children[0].style.visibility='visible'; this.children[0].style.opacity=1" onmouseout="this.children[0].style.visibility='hidden'; this.children[0].style.opacity=0"><span style="${tooltipStyle}">${timelineObject.name} <br> Bought ${(timelineObject.amount == null || timelineObject.amount == 1) ? '1 time' : (timelineObject.amount + " times")}</span></div>`;
+		tl += "</div>";
+		mod.timelineString = tl;
 	},
 	createBasicOptionMenu: () => {
 		var optionFrame = document.createElement("div");
@@ -244,7 +279,7 @@ Game.registerMod("autobuy", {
 	 * @param {string} label - Optional, only use if you feel the need to explain what the button does next to it
 	 */
 	appendOptionButton: (buttonString, onclick, boundSetting, id = null, label=null) => {
-		var buttonToInject = "<a class='option smallFancyButton" + ((App.mods["autobuy"].saveData[boundSetting]) ? '' : ' off') +
+		var buttonToInject = "<a class='option smallFancyButton" + ((App.mods["autobuy"].saveData[boundSetting] || boundSetting == null) ? '' : ' off') +
 							 	"' onclick=\"PlaySound('snd/tick.mp3');" + onclick + "\"" + 
 							    ((id != null) ? ("id=" + id) : '') + ">" + buttonString + "</a>" + 
 								((label != null) ? (`<label>${label}</label>`) : '');
