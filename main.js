@@ -113,7 +113,7 @@ Game.registerMod("autobuy", {
 					backgroundY: offsetY,
 					time: Game.time
 				}
-				mod.saveData.buyTimeline.push(product);
+				mod.saveData.buyTimeline.unshift(product);
 				mod.context.appendToTimeline(product);
 			}
 		}
@@ -132,7 +132,7 @@ Game.registerMod("autobuy", {
 					backgroundY: offsetY,
 					time: Game.time
 				}
-				mod.saveData.buyTimeline.push(upgrade);
+				mod.saveData.buyTimeline.unshift(upgrade);
 				mod.context.appendToTimeline(upgrade);
 			}
 		}
