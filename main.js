@@ -216,7 +216,8 @@ Game.registerMod("autobuy", {
 							"<input class='slider' style='clear:both;' type='range' min='0' max='100' value='" + 
 							App.mods["autobuy"].saveData.buildingBulk + "' id='autoBuyBulkAmount' " +
 							"onchange=\"App.mods['autobuy'].saveData.buildingBulk = parseInt(this.value); l('autoBuyBulkAmountText').innerHTML = this.value;\" " +
-							"onmouseup=\"PlaySound('snd/tick.mp3');\" />"+
+							"onmouseup=\"PlaySound('snd/tick.mp3');\"" + 
+							"oninput=\"l('autoBuyBulkAmountText').innerHTML = this.value;\"/>"+
 						 "</div>" + 
 						 "<label>Here you can change the amount of buildings the Autobuyer should buy at once</label>";
 		mod.context.appendRawOption(bulkSlider);
