@@ -120,8 +120,8 @@ Game.registerMod("autobuy", {
 		else if(cheapestUpgrade != null) {
 			cheapestUpgrade[1].buy();
 			var icons = "https://orteil.dashnet.org/cookieclicker/img/icons.png?v=2.031";
-			var offsetX = parseInt(document.getElementById(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionX.replace('px', ''));
-			var offsetY = parseInt(document.getElementById(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionY.replace('px', ''));
+			var offsetX = parseInt(l(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionX.replace('px', ''));
+			var offsetY = parseInt(l(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionY.replace('px', ''));
 			Game.Notify(`Automatically bought ${cheapestUpgrade[1].name} upgrade`, '', [Math.abs(offsetX)/48,Math.abs(offsetY)/48, icons]);
 			if(mod.saveData.keepTimeline) {
 				var upgrade = {
@@ -197,8 +197,8 @@ Game.registerMod("autobuy", {
 				nextContainer.innerHTML = "<p style='color:green; font-weight:bold;'> Next </p>";
 				l('upgrade' + cheapestUpgrade[0]).appendChild(nextContainer);
 				l('autoBuyNext').style.backgroundImage = "url(img/icons.png?v=2.031)";
-				var offsetX = parseInt(document.getElementById(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionX.replace('px', ''));
-				var offsetY = parseInt(document.getElementById(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionY.replace('px', ''));
+				var offsetX = parseInt(l(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionX.replace('px', ''));
+				var offsetY = parseInt(l(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionY.replace('px', ''));
 				l('autoBuyNext').style.backgroundPosition = `${offsetX}px ${offsetY}px`;
 				l('autoBuyNextName').innerHTML = cheapestUpgrade[1].name
 			}
