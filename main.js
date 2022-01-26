@@ -187,6 +187,10 @@ Game.registerMod("autobuy", {
 				var offsetY = parseInt(cheapestProduct[0].l.querySelectorAll('.icon:not(.off)')[0].style.backgroundPositionY.replace('px', ''));
 				l('autoBuyNext').style.backgroundPosition = `${offsetX}px ${offsetY}px`;
 				l('autoBuyNextName').innerHTML = cheapestProduct[0].name;
+				if(cheapestProduct[0].name.length > 28) {
+					l('autoBuyNextName').style.fontSize = "10px";
+				}
+				else l('autoBuyNextName').style.removeProperty('font-size');
 			}
 		}
 		else if(cheapestUpgrade != null) {
@@ -207,6 +211,10 @@ Game.registerMod("autobuy", {
 				var offsetY = parseInt(l(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionY.replace('px', ''));
 				l('autoBuyNext').style.backgroundPosition = `${offsetX}px ${offsetY}px`;
 				l('autoBuyNextName').innerHTML = cheapestUpgrade[1].name
+				if(cheapestUpgrade[1].name.length > 28) {
+					l('autoBuyNextName').style.fontSize = "10px";
+				}
+				else l('autoBuyNextName').style.removeProperty('font-size');
 			}
 		}
 	},
@@ -306,7 +314,7 @@ Game.registerMod("autobuy", {
 		container.style.alignItems = "center";
 		container.style.margin = "auto";
 		container.innerHTML = "<div style=\"font-size:28px;font-family: 'Merriweather', Georgia,serif;text-shadow: 0px 1px 4px #000;padding-left:10px; padding-right:10px;\">" + 
-		"<span>Next:</span></div><div id='autoBuyNext' class='crate enabled'></div><div style=\"font-size:18px;font-family: 'Merriweather', Georgia,serif;text-shadow: 0px 1px 4px #000;padding-left:10px; padding-right:10px;\">" +
+		"<span>Next:</span></div><div id='autoBuyNext' class='crate enabled'></div><div style=\"font-size:18px;font-family: 'Merriweather', Georgia,serif;text-shadow: 0px 1px 4px #000;padding-left:10px; padding-right:10px; max-width:100px\">" +
 		"<span id='autoBuyNextName'></span></div>";
 		l('storeTitle').parentNode.insertBefore(container, l('storeTitle').nextSibling);
 	}
