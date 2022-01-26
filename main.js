@@ -16,14 +16,20 @@ Game.registerMod("autobuy", {
 		this.injectNextBuyContainer();
 		//Hook up checking and buying the cheaptest thing to logic and trying to inject menu to every draw
 		Game.registerHook('logic', () => {this.buyCheapest()}); 
+		Game.registerHook('logic', () => {
+			if(l('scroll-container')) {
+				mod.context.scrollPos = l('scroll-container').scrollTop;
+			}
+		});
 		Game.registerHook('draw', () => {this.injectMenu()}); 
 		Game.registerHook('draw', () => {this.hightlightNextPurchase()});
 		Game.registerHook('reincarnate', () => {
 			mod.saveData.buyTimeline = [];
-			mod.timelineString = "<div style='overflow-y:auto; overflow-x:visible; max-height: 300px;'><br><div style='font-size: 17px; font-family: Kavoon, Georgia, serif;'>Buying Timeline (resets with ascension)</div> <br> </div>";
+			mod.timelineString = "<div id='scroll-container' style='overflow-y:auto; overflow-x:visible; max-height: 300px;'><br><div style='font-size: 17px; font-family: Kavoon, Georgia, serif;'>Buying Timeline (resets with ascension)</div> <br> </div>";
 			//mod.context.generateTimelineString();
 		});
 		mod.context = this;
+		mod.context.scrollPos = 0; 
 	},
 	save: () => {
 		return JSON.stringify(App.mods["autobuy"].saveData);
@@ -48,7 +54,7 @@ Game.registerMod("autobuy", {
 			savedata.buyUpgrades = json.buyUpgrades;
 			savedata.buyTimeline = json.buyTimeline;
 			savedata.keepTimeline = json.keepTimeline;
-			/*: dummy timeline item
+			/*: dummy timeline item 
 			savedata.buyTimeline.push({
 				name: "Dummy",
 				amount: "1",
@@ -229,6 +235,7 @@ Game.registerMod("autobuy", {
 		if(mod.saveData.buyTimeline.length == 0 || !App.mods["autobuy"].saveData.keepTimeline) return;
 		mod.context.appendOptionButton("Clear Timeline", "App.mods['autobuy'].saveData.buyTimeline = []; App.mods['autobuy'].context.generateTimelineString();", null, null, "Clears current timeline");
 		mod.context.appendRawOption(mod.timelineString);
+		l('scroll-container').scrollTop = mod.context.scrollPos;
 
 	},
 	generateTimelineString: async () => {
@@ -240,7 +247,7 @@ Game.registerMod("autobuy", {
 			//The bigger the time, the fresher the purchase
 			return b.time - a.time;
 		});
-		var container = "<div style='overflow-y:auto; overflow-x:visible; max-height: 300px;'><br><div style='font-size: 17px; font-family: Kavoon, Georgia, serif;'>Buying Timeline (resets with ascension)</div> <br>";
+		var container = "<div id='scroll-container' style='overflow-y:auto; overflow-x:visible; max-height: 300px;'><br><div style='font-size: 17px; font-family: Kavoon, Georgia, serif;'>Buying Timeline (resets with ascension)</div> <br>";
 		var tooltipStyle = 'visibility:hidden; width:160px; background-color:#555; color:#fff; text-align:center; border-radius:6px; padding:5px 0;' + 
 							'position:absolute; z-index:999999999999999; bottom:110%; left:110%; margin-left:-60px; opacity:0; transition: opacity 0.3s;';
 			for(var i = 0; i < mod.saveData.buyTimeline.length; i++) {
