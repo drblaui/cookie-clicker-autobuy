@@ -157,9 +157,10 @@ Game.registerMod("autobuy", {
 		}) : [];
 
 		if(upgrades.length == 0 && products.length == 0) {
+			if(l('autobuyStoreSection')) l('autobuyStoreSection').remove();
 			return;
 		}
-
+		if(l('autobuyStoreSection') == null) mod.context.injectNextBuyContainer();
 		var cheapestUpgrade = upgrades[0] || null;
 
 		var cheapestProduct = [null, Infinity];
@@ -309,6 +310,7 @@ Game.registerMod("autobuy", {
 	},
 	injectNextBuyContainer: () => {
 		var container = document.createElement("div");
+		container.id = "autobuyStoreSection"
 		container.classList.add("storeSection");
 		container.style.display = "flex";
 		container.style.alignItems = "center";
