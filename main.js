@@ -125,7 +125,7 @@ Game.registerMod("autobuy", {
 		}
 		else if(cheapestUpgrade != null) {
 			cheapestUpgrade[1].buy();
-			var icons = "https://orteil.dashnet.org/cookieclicker/img/icons.png?v=2.031";
+			var icons = `https://orteil.dashnet.org/cookieclicker/img/icons.png?v=${Game.version}`;
 			var offsetX = parseInt(l(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionX.replace('px', ''));
 			var offsetY = parseInt(l(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionY.replace('px', ''));
 			Game.Notify(`Automatically bought ${cheapestUpgrade[1].name} upgrade`, '', [Math.abs(offsetX)/48,Math.abs(offsetY)/48, icons]);
@@ -207,7 +207,7 @@ Game.registerMod("autobuy", {
 				nextContainer.style.zIndex = "11";
 				nextContainer.innerHTML = "<p style='color:green; font-weight:bold;'> Next </p>";
 				l('upgrade' + cheapestUpgrade[0]).appendChild(nextContainer);
-				l('autoBuyNext').style.backgroundImage = "url(img/icons.png?v=2.031)";
+				l('autoBuyNext').style.backgroundImage = `url(img/icons.png?v=${Game.version})`;
 				var offsetX = parseInt(l(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionX.replace('px', ''));
 				var offsetY = parseInt(l(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionY.replace('px', ''));
 				l('autoBuyNext').style.backgroundPosition = `${offsetX}px ${offsetY}px`;
@@ -260,7 +260,7 @@ Game.registerMod("autobuy", {
 		var tooltipStyle = 'visibility:hidden; width:160px; background-color:#555; color:#fff; text-align:center; border-radius:6px; padding:5px 0;' + 
 							'position:absolute; z-index:999999999999999; bottom:110%; left:110%; margin-left:-60px; opacity:0; transition: opacity 0.3s;';
 			for(var i = 0; i < mod.saveData.buyTimeline.length; i++) {
-				container += `<div class="crate enabled" style="background-position: ${mod.saveData.buyTimeline[i].backgroundX}px ${mod.saveData.buyTimeline[i].backgroundY}px; background-image: url(${mod.saveData.buyTimeline[i].amount == null ? 'img/icons.png?v=2.043' : 'img/buildings.png?v=5'})" onmouseover="this.children[0].style.visibility='visible'; this.children[0].style.opacity=1" onmouseout="this.children[0].style.visibility='hidden'; this.children[0].style.opacity=0"><span style="${tooltipStyle}">${mod.saveData.buyTimeline[i].name} <br> Bought ${(mod.saveData.buyTimeline[i].amount == null || mod.saveData.buyTimeline[i].amount == 1) ? '1 time' : (mod.saveData.buyTimeline[i].amount + " times")}</span></div>`;
+				container += `<div class="crate enabled" style="background-position: ${mod.saveData.buyTimeline[i].backgroundX}px ${mod.saveData.buyTimeline[i].backgroundY}px; background-image: url(${mod.saveData.buyTimeline[i].amount == null ? `img/icons.png?v=${Game.version}` : 'img/buildings.png?v=5'})" onmouseover="this.children[0].style.visibility='visible'; this.children[0].style.opacity=1" onmouseout="this.children[0].style.visibility='hidden'; this.children[0].style.opacity=0"><span style="${tooltipStyle}">${mod.saveData.buyTimeline[i].name} <br> Bought ${(mod.saveData.buyTimeline[i].amount == null || mod.saveData.buyTimeline[i].amount == 1) ? '1 time' : (mod.saveData.buyTimeline[i].amount + " times")}</span></div>`;
 			}
 		container += "</div>";
 		mod.timelineString = container;
@@ -271,7 +271,7 @@ Game.registerMod("autobuy", {
 		var tl = mod.timelineString.slice(0,-6);
 		var tooltipStyle = 'visibility:hidden; width:160px; background-color:#555; color:#fff; text-align:center; border-radius:6px; padding:5px 0;' + 
 							'position:absolute; z-index:999999999999999; bottom:110%; left:110%; margin-left:-60px; opacity:0; transition: opacity 0.3s;';
-		tl += `<div class="crate enabled" style="background-position: ${timelineObject.backgroundX}px ${timelineObject.backgroundY}px; background-image: url(${timelineObject.amount == null ? 'img/icons.png?v=2.043' : 'img/buildings.png?v=5'})" onmouseover="this.children[0].style.visibility='visible'; this.children[0].style.opacity=1" onmouseout="this.children[0].style.visibility='hidden'; this.children[0].style.opacity=0"><span style="${tooltipStyle}">${timelineObject.name} <br> Bought ${(timelineObject.amount == null || timelineObject.amount == 1) ? '1 time' : (timelineObject.amount + " times")}</span></div>`;
+		tl += `<div class="crate enabled" style="background-position: ${timelineObject.backgroundX}px ${timelineObject.backgroundY}px; background-image: url(${timelineObject.amount == null ? `img/icons.png?v=${Game.version}` : 'img/buildings.png?v=5'})" onmouseover="this.children[0].style.visibility='visible'; this.children[0].style.opacity=1" onmouseout="this.children[0].style.visibility='hidden'; this.children[0].style.opacity=0"><span style="${tooltipStyle}">${timelineObject.name} <br> Bought ${(timelineObject.amount == null || timelineObject.amount == 1) ? '1 time' : (timelineObject.amount + " times")}</span></div>`;
 		tl += "</div>";
 		mod.timelineString = tl;
 	},
