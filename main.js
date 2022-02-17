@@ -1,5 +1,13 @@
+function requestTemplate(template, dir) {
+	let xhr = new XMLHttpRequest();
+	xhr.open("GET", `${dir}/templates/${template}.html`, false);
+	xhr.send();
+	let parser = new DOMParser();
+	let doc = parser.parseFromString(xhr.responseText, "text/html");
+	return doc.body.children[0];
+}
+
 Game.registerMod("autobuy", {
-	//TODO: LBeautify() for pretty numbers
 	init: function (){
 		var mod = App.mods["autobuy"];
 		var modDir;
@@ -9,21 +17,26 @@ Game.registerMod("autobuy", {
 		else {
 			modDir =  '../mods/' + mod.dir.substring(mod.dir.lastIndexOf('\\') + 1);
 		}
-		mod.modDirectory = modDir;
+		mod.context = this;
+		mod.context.scrollPos = 0; 
+		mod.context.modDirectory = modDir;
 		Game.Notify(`Autobuy is now enabled!`, '', [16,5, modDir + '/thumbnail.png']);
 		mod.saveData = {"buildingBulk": 0, "buyUpgrades": false, "buyTimeline": [], "keepTimeline": false};
 		//console.log(this);
 		this.injectNextBuyContainer();
 		//Hook up checking and buying the cheaptest thing to logic and trying to inject menu to every draw
 		Game.registerHook('logic', () => {this.buyCheapest()}); 
+		Game.registerHook('logic', () => {
+			if(l('scroll-container')) {
+				mod.context.scrollPos = l('scroll-container').scrollTop;
+			}
+		});
 		Game.registerHook('draw', () => {this.injectMenu()}); 
 		Game.registerHook('draw', () => {this.hightlightNextPurchase()});
 		Game.registerHook('reincarnate', () => {
 			mod.saveData.buyTimeline = [];
-			mod.timelineString = "<div style='overflow-y:auto; overflow-x:visible; max-height: 300px;'><br><div style='font-size: 17px; font-family: Kavoon, Georgia, serif;'>Buying Timeline (resets with ascension)</div> <br> </div>";
-			//mod.context.generateTimelineString();
+			mod.timelineString = "<div id='scroll-container' style='overflow-y:auto; overflow-x:visible; max-height: 300px;'><br><div style='font-size: 17px; font-family: Kavoon, Georgia, serif;'>Buying Timeline (resets with ascension)</div> <br> </div>";
 		});
-		mod.context = this;
 	},
 	save: () => {
 		return JSON.stringify(App.mods["autobuy"].saveData);
@@ -48,7 +61,7 @@ Game.registerMod("autobuy", {
 			savedata.buyUpgrades = json.buyUpgrades;
 			savedata.buyTimeline = json.buyTimeline;
 			savedata.keepTimeline = json.keepTimeline;
-			/*: dummy timeline item
+			/*: dummy timeline item 
 			savedata.buyTimeline.push({
 				name: "Dummy",
 				amount: "1",
@@ -75,7 +88,7 @@ Game.registerMod("autobuy", {
 		var bulkAmount = mod.saveData.buildingBulk;
 
 		var upgrades = mod.saveData.buyUpgrades ? Object.entries(Game.UpgradesInStore).filter(([index, upgrade]) => {
-			return upgrade.basePrice <= Game.cookies && l('upgrades').querySelector(`#upgrade${index}`) != null;
+			return upgrade.getPrice() <= Game.cookies && l('upgrades').querySelector(`#upgrade${index}`) != null;
 		}) : [];
 
 		var products = bulkAmount != 0 ? Array.from(Game.ObjectsById).filter((gameObject) => {
@@ -98,7 +111,7 @@ Game.registerMod("autobuy", {
 		}
 
 		//Click cheapest option
-		if((cheapestUpgrade == null || cheapestProduct[1] <= cheapestUpgrade[1].basePrice)) {
+		if((cheapestUpgrade == null || cheapestProduct[1] <= cheapestUpgrade[1].getPrice())) {
 			cheapestProduct[0].buy(bulkAmount);
 			var buildings = "https://orteil.dashnet.org/cookieclicker/img/buildings.png?v=5";
 			var offsetX = parseInt(cheapestProduct[0].l.querySelectorAll('.icon:not(.off)')[0].style.backgroundPositionX.replace('px', ''));
@@ -113,15 +126,15 @@ Game.registerMod("autobuy", {
 					backgroundY: offsetY,
 					time: Game.time
 				}
-				mod.saveData.buyTimeline.push(product);
+				mod.saveData.buyTimeline.unshift(product);
 				mod.context.appendToTimeline(product);
 			}
 		}
 		else if(cheapestUpgrade != null) {
 			cheapestUpgrade[1].buy();
-			var icons = "https://orteil.dashnet.org/cookieclicker/img/icons.png?v=2.031";
-			var offsetX = parseInt(document.getElementById(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionX.replace('px', ''));
-			var offsetY = parseInt(document.getElementById(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionY.replace('px', ''));
+			var icons = `https://orteil.dashnet.org/cookieclicker/img/icons.png?v=${Game.version}`;
+			var offsetX = parseInt(l(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionX.replace('px', ''));
+			var offsetY = parseInt(l(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionY.replace('px', ''));
 			Game.Notify(`Automatically bought ${cheapestUpgrade[1].name} upgrade`, '', [Math.abs(offsetX)/48,Math.abs(offsetY)/48, icons]);
 			if(mod.saveData.keepTimeline) {
 				var upgrade = {
@@ -132,7 +145,7 @@ Game.registerMod("autobuy", {
 					backgroundY: offsetY,
 					time: Game.time
 				}
-				mod.saveData.buyTimeline.push(upgrade);
+				mod.saveData.buyTimeline.unshift(upgrade);
 				mod.context.appendToTimeline(upgrade);
 			}
 		}
@@ -151,9 +164,10 @@ Game.registerMod("autobuy", {
 		}) : [];
 
 		if(upgrades.length == 0 && products.length == 0) {
+			if(l('autobuyStoreSection')) l('autobuyStoreSection').remove();
 			return;
 		}
-
+		if(l('autobuyStoreSection') == null) mod.context.injectNextBuyContainer();
 		var cheapestUpgrade = upgrades[0] || null;
 
 		var cheapestProduct = [null, Infinity];
@@ -163,7 +177,7 @@ Game.registerMod("autobuy", {
 			}
 		}
 
-		if((cheapestUpgrade == null || cheapestProduct[1] <= cheapestUpgrade[1].basePrice)) {
+		if((cheapestUpgrade == null || cheapestProduct[1] <= cheapestUpgrade[1].getPrice())) {
 			if(cheapestProduct[0].l.querySelector('#nextPurchaseIndicator') == null) {
 				if(l('nextPurchaseIndicator') != null) {
 					l('nextPurchaseIndicator').remove();
@@ -181,6 +195,10 @@ Game.registerMod("autobuy", {
 				var offsetY = parseInt(cheapestProduct[0].l.querySelectorAll('.icon:not(.off)')[0].style.backgroundPositionY.replace('px', ''));
 				l('autoBuyNext').style.backgroundPosition = `${offsetX}px ${offsetY}px`;
 				l('autoBuyNextName').innerHTML = cheapestProduct[0].name;
+				if(cheapestProduct[0].name.length > 28) {
+					l('autoBuyNextName').style.fontSize = "10px";
+				}
+				else l('autoBuyNextName').style.removeProperty('font-size');
 			}
 		}
 		else if(cheapestUpgrade != null) {
@@ -196,11 +214,15 @@ Game.registerMod("autobuy", {
 				nextContainer.style.zIndex = "11";
 				nextContainer.innerHTML = "<p style='color:green; font-weight:bold;'> Next </p>";
 				l('upgrade' + cheapestUpgrade[0]).appendChild(nextContainer);
-				l('autoBuyNext').style.backgroundImage = "url(img/icons.png?v=2.031)";
-				var offsetX = parseInt(document.getElementById(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionX.replace('px', ''));
-				var offsetY = parseInt(document.getElementById(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionY.replace('px', ''));
+				l('autoBuyNext').style.backgroundImage = `url(img/icons.png?v=${Game.version})`;
+				var offsetX = parseInt(l(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionX.replace('px', ''));
+				var offsetY = parseInt(l(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionY.replace('px', ''));
 				l('autoBuyNext').style.backgroundPosition = `${offsetX}px ${offsetY}px`;
 				l('autoBuyNextName').innerHTML = cheapestUpgrade[1].name
+				if(cheapestUpgrade[1].name.length > 28) {
+					l('autoBuyNextName').style.fontSize = "10px";
+				}
+				else l('autoBuyNextName').style.removeProperty('font-size');
 			}
 		}
 	},
@@ -216,7 +238,8 @@ Game.registerMod("autobuy", {
 							"<input class='slider' style='clear:both;' type='range' min='0' max='100' value='" + 
 							App.mods["autobuy"].saveData.buildingBulk + "' id='autoBuyBulkAmount' " +
 							"onchange=\"App.mods['autobuy'].saveData.buildingBulk = parseInt(this.value); l('autoBuyBulkAmountText').innerHTML = this.value;\" " +
-							"onmouseup=\"PlaySound('snd/tick.mp3');\" />"+
+							"onmouseup=\"PlaySound('snd/tick.mp3');\"" + 
+							"oninput=\"l('autoBuyBulkAmountText').innerHTML = this.value;\"/>"+
 						 "</div>" + 
 						 "<label>Here you can change the amount of buildings the Autobuyer should buy at once</label>";
 		mod.context.appendRawOption(bulkSlider);
@@ -228,6 +251,7 @@ Game.registerMod("autobuy", {
 		if(mod.saveData.buyTimeline.length == 0 || !App.mods["autobuy"].saveData.keepTimeline) return;
 		mod.context.appendOptionButton("Clear Timeline", "App.mods['autobuy'].saveData.buyTimeline = []; App.mods['autobuy'].context.generateTimelineString();", null, null, "Clears current timeline");
 		mod.context.appendRawOption(mod.timelineString);
+		l('scroll-container').scrollTop = mod.context.scrollPos;
 
 	},
 	generateTimelineString: async () => {
@@ -239,11 +263,11 @@ Game.registerMod("autobuy", {
 			//The bigger the time, the fresher the purchase
 			return b.time - a.time;
 		});
-		var container = "<div style='overflow-y:auto; overflow-x:visible; max-height: 300px;'><br><div style='font-size: 17px; font-family: Kavoon, Georgia, serif;'>Buying Timeline (resets with ascension)</div> <br>";
+		var container = "<div id='scroll-container' style='overflow-y:auto; overflow-x:visible; max-height: 300px;'><br><div style='font-size: 17px; font-family: Kavoon, Georgia, serif;'>Buying Timeline (resets with ascension)</div> <br>";
 		var tooltipStyle = 'visibility:hidden; width:160px; background-color:#555; color:#fff; text-align:center; border-radius:6px; padding:5px 0;' + 
 							'position:absolute; z-index:999999999999999; bottom:110%; left:110%; margin-left:-60px; opacity:0; transition: opacity 0.3s;';
 			for(var i = 0; i < mod.saveData.buyTimeline.length; i++) {
-				container += `<div class="crate enabled" style="background-position: ${mod.saveData.buyTimeline[i].backgroundX}px ${mod.saveData.buyTimeline[i].backgroundY}px; background-image: url(${mod.saveData.buyTimeline[i].amount == null ? 'img/icons.png?v=2.043' : 'img/buildings.png?v=5'})" onmouseover="this.children[0].style.visibility='visible'; this.children[0].style.opacity=1" onmouseout="this.children[0].style.visibility='hidden'; this.children[0].style.opacity=0"><span style="${tooltipStyle}">${mod.saveData.buyTimeline[i].name} <br> Bought ${(mod.saveData.buyTimeline[i].amount == null || mod.saveData.buyTimeline[i].amount == 1) ? '1 time' : (mod.saveData.buyTimeline[i].amount + " times")}</span></div>`;
+				container += `<div class="crate enabled" style="background-position: ${mod.saveData.buyTimeline[i].backgroundX}px ${mod.saveData.buyTimeline[i].backgroundY}px; background-image: url(${mod.saveData.buyTimeline[i].amount == null ? `img/icons.png?v=${Game.version}` : 'img/buildings.png?v=5'})" onmouseover="this.children[0].style.visibility='visible'; this.children[0].style.opacity=1" onmouseout="this.children[0].style.visibility='hidden'; this.children[0].style.opacity=0"><span style="${tooltipStyle}">${mod.saveData.buyTimeline[i].name} <br> Bought ${(mod.saveData.buyTimeline[i].amount == null || mod.saveData.buyTimeline[i].amount == 1) ? '1 time' : (mod.saveData.buyTimeline[i].amount + " times")}</span></div>`;
 			}
 		container += "</div>";
 		mod.timelineString = container;
@@ -254,20 +278,12 @@ Game.registerMod("autobuy", {
 		var tl = mod.timelineString.slice(0,-6);
 		var tooltipStyle = 'visibility:hidden; width:160px; background-color:#555; color:#fff; text-align:center; border-radius:6px; padding:5px 0;' + 
 							'position:absolute; z-index:999999999999999; bottom:110%; left:110%; margin-left:-60px; opacity:0; transition: opacity 0.3s;';
-		tl += `<div class="crate enabled" style="background-position: ${timelineObject.backgroundX}px ${timelineObject.backgroundY}px; background-image: url(${timelineObject.amount == null ? 'img/icons.png?v=2.043' : 'img/buildings.png?v=5'})" onmouseover="this.children[0].style.visibility='visible'; this.children[0].style.opacity=1" onmouseout="this.children[0].style.visibility='hidden'; this.children[0].style.opacity=0"><span style="${tooltipStyle}">${timelineObject.name} <br> Bought ${(timelineObject.amount == null || timelineObject.amount == 1) ? '1 time' : (timelineObject.amount + " times")}</span></div>`;
+		tl += `<div class="crate enabled" style="background-position: ${timelineObject.backgroundX}px ${timelineObject.backgroundY}px; background-image: url(${timelineObject.amount == null ? `img/icons.png?v=${Game.version}` : 'img/buildings.png?v=5'})" onmouseover="this.children[0].style.visibility='visible'; this.children[0].style.opacity=1" onmouseout="this.children[0].style.visibility='hidden'; this.children[0].style.opacity=0"><span style="${tooltipStyle}">${timelineObject.name} <br> Bought ${(timelineObject.amount == null || timelineObject.amount == 1) ? '1 time' : (timelineObject.amount + " times")}</span></div>`;
 		tl += "</div>";
 		mod.timelineString = tl;
 	},
 	createBasicOptionMenu: () => {
-		var optionFrame = document.createElement("div");
-		optionFrame.id = "autoBuyerOptions";
-		optionFrame.className = "framed";
-		optionFrame.style.margin = "4px 48px";
-		optionFrame.innerHTML = "<div class='block' style='padding: 0px; margin: 8px 4px'>"+
-									"<div class='subsection' style='padding:0px'>" +
-										"<div class='title'>Autobuy Settings</div>" + 
-									"</div>" +
-								"</div>";
+		let optionFrame = requestTemplate("basicOptionMenu", App.mods["autobuy"].context.modDirectory);
 		l('menu').insertBefore(optionFrame, l('menu').lastChild);
 	},
 	/*
@@ -292,14 +308,7 @@ Game.registerMod("autobuy", {
 		l('autoBuyerOptions').querySelector('.subsection').appendChild(optionDiv);
 	},
 	injectNextBuyContainer: () => {
-		var container = document.createElement("div");
-		container.classList.add("storeSection");
-		container.style.display = "flex";
-		container.style.alignItems = "center";
-		container.style.margin = "auto";
-		container.innerHTML = "<div style=\"font-size:28px;font-family: 'Merriweather', Georgia,serif;text-shadow: 0px 1px 4px #000;padding-left:10px; padding-right:10px;\">" + 
-		"<span>Next:</span></div><div id='autoBuyNext' class='crate enabled'></div><div style=\"font-size:18px;font-family: 'Merriweather', Georgia,serif;text-shadow: 0px 1px 4px #000;padding-left:10px; padding-right:10px;\">" +
-		"<span id='autoBuyNextName'></span></div>";
-		l('storeTitle').parentNode.insertBefore(container, l('storeTitle').nextSibling);
+		let inject = requestTemplate('nextBuyContainer', App.mods["autobuy"].context.modDirectory);
+		l('storeTitle').parentNode.insertBefore(inject, l('storeTitle').nextSibling);
 	}
 });
