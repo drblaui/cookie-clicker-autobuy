@@ -6,8 +6,15 @@ This mod will automatically buy the cheapest upgrade or building as you play. No
 
 This does not turn off Steam Achievements as it only buys things you could just click yourself
 
-### This Mod does not take discounts into account. So don't wonder why it doesn't buy some things instantly or buys things first that are a little more expensive 
-
 ## Changelog
+
 - 1.0: Initial Release
 - 1.1 (09.01.2022): Updated how the Timeline is created so it won't slow down the game in the options menu. Also added options for not keeping track of timeline at all or clearing the current one
+- 2.0 (17.02.2022): Basic overhaul
+  - Small things are now a bit more efficient
+  - Prices are now calculated like they are shown in game (this fixes a lot of issues and makes the whole mod more reliable)
+  - the slider in the options now shows you the amount you are on **WHILE SLIDING**
+  - Text in the next buy container will now stop clipping into the crate that show the icon
+  - The timeline is now sorted the right way (it used to append wrong)
+  - scrolling in the timeline is cached. This means that the scrollbar won't jump to the top when the menu redraws (which it does almost every tick)
+  
