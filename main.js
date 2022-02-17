@@ -1,5 +1,13 @@
+function requestTemplate(template, dir) {
+	let xhr = new XMLHttpRequest();
+	xhr.open("GET", `${dir}/templates/${template}.html`, false);
+	xhr.send();
+	let parser = new DOMParser();
+	let doc = parser.parseFromString(xhr.responseText, "text/html");
+	return doc.body.children[0];
+}
+
 Game.registerMod("autobuy", {
-	//TODO: LBeautify() for pretty numbers
 	init: function (){
 		var mod = App.mods["autobuy"];
 		var modDir;
@@ -9,7 +17,9 @@ Game.registerMod("autobuy", {
 		else {
 			modDir =  '../mods/' + mod.dir.substring(mod.dir.lastIndexOf('\\') + 1);
 		}
-		mod.modDirectory = modDir;
+		mod.context = this;
+		mod.context.scrollPos = 0; 
+		mod.context.modDirectory = modDir;
 		Game.Notify(`Autobuy is now enabled!`, '', [16,5, modDir + '/thumbnail.png']);
 		mod.saveData = {"buildingBulk": 0, "buyUpgrades": false, "buyTimeline": [], "keepTimeline": false};
 		//console.log(this);
@@ -26,10 +36,7 @@ Game.registerMod("autobuy", {
 		Game.registerHook('reincarnate', () => {
 			mod.saveData.buyTimeline = [];
 			mod.timelineString = "<div id='scroll-container' style='overflow-y:auto; overflow-x:visible; max-height: 300px;'><br><div style='font-size: 17px; font-family: Kavoon, Georgia, serif;'>Buying Timeline (resets with ascension)</div> <br> </div>";
-			//mod.context.generateTimelineString();
 		});
-		mod.context = this;
-		mod.context.scrollPos = 0; 
 	},
 	save: () => {
 		return JSON.stringify(App.mods["autobuy"].saveData);
@@ -276,15 +283,7 @@ Game.registerMod("autobuy", {
 		mod.timelineString = tl;
 	},
 	createBasicOptionMenu: () => {
-		var optionFrame = document.createElement("div");
-		optionFrame.id = "autoBuyerOptions";
-		optionFrame.className = "framed";
-		optionFrame.style.margin = "4px 48px";
-		optionFrame.innerHTML = "<div class='block' style='padding: 0px; margin: 8px 4px'>"+
-									"<div class='subsection' style='padding:0px'>" +
-										"<div class='title'>Autobuy Settings</div>" + 
-									"</div>" +
-								"</div>";
+		let optionFrame = requestTemplate("basicOptionMenu", App.mods["autobuy"].context.modDirectory);
 		l('menu').insertBefore(optionFrame, l('menu').lastChild);
 	},
 	/*
@@ -309,15 +308,7 @@ Game.registerMod("autobuy", {
 		l('autoBuyerOptions').querySelector('.subsection').appendChild(optionDiv);
 	},
 	injectNextBuyContainer: () => {
-		var container = document.createElement("div");
-		container.id = "autobuyStoreSection"
-		container.classList.add("storeSection");
-		container.style.display = "flex";
-		container.style.alignItems = "center";
-		container.style.margin = "auto";
-		container.innerHTML = "<div style=\"font-size:28px;font-family: 'Merriweather', Georgia,serif;text-shadow: 0px 1px 4px #000;padding-left:10px; padding-right:10px;\">" + 
-		"<span>Next:</span></div><div id='autoBuyNext' class='crate enabled'></div><div style=\"font-size:18px;font-family: 'Merriweather', Georgia,serif;text-shadow: 0px 1px 4px #000;padding-left:10px; padding-right:10px; max-width:100px\">" +
-		"<span id='autoBuyNextName'></span></div>";
-		l('storeTitle').parentNode.insertBefore(container, l('storeTitle').nextSibling);
+		let inject = requestTemplate('nextBuyContainer', App.mods["autobuy"].context.modDirectory);
+		l('storeTitle').parentNode.insertBefore(inject, l('storeTitle').nextSibling);
 	}
 });
