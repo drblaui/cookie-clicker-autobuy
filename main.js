@@ -21,7 +21,7 @@ Game.registerMod("autobuy", {
 		mod.context.scrollPos = 0; 
 		mod.context.modDirectory = modDir;
 		Game.Notify(`Autobuy is now enabled!`, '', [16,5, modDir + '/thumbnail.png']);
-		mod.saveData = {"buildingBulk": 0, "buyUpgrades": false, "buyTimeline": [], "keepTimeline": false};
+		mod.saveData = {"buildingBulk": 0, "buyUpgrades": false, "buyTimeline": [], "keepTimeline": false, "announcements": true};
 		//console.log(this);
 		this.injectNextBuyContainer();
 		//Hook up checking and buying the cheaptest thing to logic and trying to inject menu to every draw
@@ -57,10 +57,14 @@ Game.registerMod("autobuy", {
 			if(json.keepTimeline == undefined || typeof json.keepTimeline != "boolean") {
 				json.keepTimeline = false;
 			}
+			if(json.announcements == undefined || typeof json.announcements != "boolean") {
+				json.announcements = true;
+			}
 			savedata.buildingBulk = json.buildingBulk;
 			savedata.buyUpgrades = json.buyUpgrades;
 			savedata.buyTimeline = json.buyTimeline;
 			savedata.keepTimeline = json.keepTimeline;
+			savedata.announcements = json.announcements;
 			/*: dummy timeline item 
 			savedata.buyTimeline.push({
 				name: "Dummy",
@@ -82,6 +86,7 @@ Game.registerMod("autobuy", {
 		App.mods["autobuy"].saveData.buyUpgrades = false;
 		App.mods["autobuy"].saveData.buyTimeline = [];
 		App.mods["autobuy"].saveData.keepTimeline = false;
+		App.mods["autobuy"].saveData.announcements = true;
 	},
 	buyCheapest: () => {
 		var mod = App.mods["autobuy"];
@@ -116,7 +121,9 @@ Game.registerMod("autobuy", {
 			var buildings = "https://orteil.dashnet.org/cookieclicker/img/buildings.png?v=5";
 			var offsetX = parseInt(cheapestProduct[0].l.querySelectorAll('.icon:not(.off)')[0].style.backgroundPositionX.replace('px', ''));
 			var offsetY = parseInt(cheapestProduct[0].l.querySelectorAll('.icon:not(.off)')[0].style.backgroundPositionY.replace('px', ''));
-			Game.Notify(`Automatically bought ${cheapestProduct[0].name} ${bulkAmount} times`, '', [Math.abs(offsetX)/48,Math.abs(offsetY)/48, buildings]);
+			if(mod.saveData.announcements) {
+				Game.Notify(`Automatically bought ${cheapestProduct[0].name} ${bulkAmount} times`, '', [Math.abs(offsetX)/48,Math.abs(offsetY)/48, buildings]);
+			}
 			if(mod.saveData.keepTimeline) {
 				var product = {
 					name: cheapestProduct[0].name,
@@ -135,7 +142,9 @@ Game.registerMod("autobuy", {
 			var icons = `https://orteil.dashnet.org/cookieclicker/img/icons.png?v=${Game.version}`;
 			var offsetX = parseInt(l(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionX.replace('px', ''));
 			var offsetY = parseInt(l(`upgrade${cheapestUpgrade[0]}`).style.backgroundPositionY.replace('px', ''));
-			Game.Notify(`Automatically bought ${cheapestUpgrade[1].name} upgrade`, '', [Math.abs(offsetX)/48,Math.abs(offsetY)/48, icons]);
+			if(mod.saveData.announcements) {
+				Game.Notify(`Automatically bought ${cheapestUpgrade[1].name} upgrade`, '', [Math.abs(offsetX)/48,Math.abs(offsetY)/48, icons]);
+			}
 			if(mod.saveData.keepTimeline) {
 				var upgrade = {
 					name: cheapestUpgrade[1].name,
@@ -246,13 +255,14 @@ Game.registerMod("autobuy", {
 
 		//Enable/Disable Upgrade Autobuy 
 		mod.context.appendOptionButton("Buy upgrades automatically", "App.mods['autobuy'].saveData.buyUpgrades=!App.mods['autobuy'].saveData.buyUpgrades;this.classList.toggle('off');", "buyUpgrades", null, "If turned on, upgrades will be considered when checking for cheapest option");
+		//Notifications
+		mod.context.appendOptionButton("Show Notifications", "App.mods['autobuy'].saveData.announcements=!App.mods['autobuy'].saveData.announcements; this.classList.toggle('off');", "announcements", null, "If turned on, notifications will be shown when the Autobuyer buys something");
 		//Buying Timeline
 		mod.context.appendOptionButton("Create Buying Timeline", "App.mods['autobuy'].saveData.keepTimeline=!App.mods['autobuy'].saveData.keepTimeline; this.classList.toggle('off'); App.mods['autobuy'].saveData.keepTimeline ? (App.mods['autobuy'].context.generateTimelineString()) : null;", "keepTimeline", null, "This will show you a container of what you bought. (This may cause stutter when you bought a lot)");
 		if(mod.saveData.buyTimeline.length == 0 || !App.mods["autobuy"].saveData.keepTimeline) return;
 		mod.context.appendOptionButton("Clear Timeline", "App.mods['autobuy'].saveData.buyTimeline = []; App.mods['autobuy'].context.generateTimelineString();", null, null, "Clears current timeline");
 		mod.context.appendRawOption(mod.timelineString);
 		l('scroll-container').scrollTop = mod.context.scrollPos;
-
 	},
 	generateTimelineString: async () => {
 		//Buy timeline display

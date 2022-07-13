@@ -17,4 +17,6 @@ This does not turn off Steam Achievements as it only buys things you could just 
   - Text in the next buy container will now stop clipping into the crate that show the icon
   - The timeline is now sorted the right way (it used to append wrong)
   - scrolling in the timeline is cached. This means that the scrollbar won't jump to the top when the menu redraws (which it does almost every tick)
-  
+- 2.1 (13.07.2022): Small changes
+  - You can now turn off the notifications thanks to an idea from [Cheevo Dust](https://steamcommunity.com/sharedfiles/filedetails/?id=2709341364) on steam.
+  - Fixed a margin number that made the menu smaller since the newest game update

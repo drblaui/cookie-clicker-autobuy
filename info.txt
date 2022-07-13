@@ -3,9 +3,9 @@
 	"ID": "autobuy",
 	"Author": "Alex",
 	"Description": "Automatically buys the first thing that becomes available",
-	"ModVersion": 2.0,
-	"GameVersion": 2.043,
-	"Date": "17/02/2022",
+	"ModVersion": 2.1,
+	"GameVersion": 2.048,
+	"Date": "13/07/2022",
 	"Dependencies": [],
 	"Disabled": 1,
 	"AllowSteamAchievs": 1
