@@ -20,3 +20,5 @@ This does not turn off Steam Achievements as it only buys things you could just 
 - 2.1 (13.07.2022): Small changes
   - You can now turn off the notifications thanks to an idea from [Cheevo Dust](https://steamcommunity.com/sharedfiles/filedetails/?id=2709341364) on steam.
   - Fixed a margin number that made the menu smaller since the newest game update
+- 2.2 (27.01.2024): Exclude Buildings
+  - You can now pick buildings in the options menu that you don't want to be bought thanks to an idea from [Lime7242](https://github.com/drblaui/cookie-clicker-autobuy/issues/32) on GitHub.
