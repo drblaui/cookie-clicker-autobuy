@@ -21,8 +21,8 @@ Game.registerMod("autobuy", {
 		mod.context.scrollPos = 0; 
 		mod.context.modDirectory = modDir;
 		Game.Notify(`Autobuy is now enabled!`, '', [16,5, modDir + '/thumbnail.png']);
-		mod.saveData = {"buildingBulk": 0, "buyUpgrades": false, "buyTimeline": [], "keepTimeline": false, "announcements": true};
-		//console.log(this);
+		mod.saveData = {"buildingBulk": 0, "buyUpgrades": false, "buyTimeline": [], "keepTimeline": false, "announcements": true, "excludedBuildings": []};
+
 		this.injectNextBuyContainer();
 		//Hook up checking and buying the cheaptest thing to logic and trying to inject menu to every draw
 		Game.registerHook('logic', () => {this.buyCheapest()}); 
@@ -60,11 +60,15 @@ Game.registerMod("autobuy", {
 			if(json.announcements == undefined || typeof json.announcements != "boolean") {
 				json.announcements = true;
 			}
+			if(json.excludedBuildings == undefined || typeof json.excludedBuildings != "object") {
+				json.excludedBuildings = [];
+			}
 			savedata.buildingBulk = json.buildingBulk;
 			savedata.buyUpgrades = json.buyUpgrades;
 			savedata.buyTimeline = json.buyTimeline;
 			savedata.keepTimeline = json.keepTimeline;
 			savedata.announcements = json.announcements;
+			savedata.excludedBuildings = json.excludedBuildings;
 			/*: dummy timeline item 
 			savedata.buyTimeline.push({
 				name: "Dummy",
@@ -87,6 +91,7 @@ Game.registerMod("autobuy", {
 		App.mods["autobuy"].saveData.buyTimeline = [];
 		App.mods["autobuy"].saveData.keepTimeline = false;
 		App.mods["autobuy"].saveData.announcements = true;
+		App.mods["autobuy"].saveData.excludedBuildings = [];
 	},
 	buyCheapest: () => {
 		var mod = App.mods["autobuy"];
@@ -110,6 +115,7 @@ Game.registerMod("autobuy", {
 		//[Product, Price]
 		var cheapestProduct = [null, Infinity];
 		for(var i = 0; i < products.length; i++) {
+			if(mod.saveData.excludedBuildings.includes(products[i].id)) continue; //Skips over excluded products
 			if(products[i].getSumPrice(bulkAmount) < cheapestProduct[1]) {
 				cheapestProduct = [products[i], products[i].getSumPrice(bulkAmount)];
 			}
@@ -181,6 +187,7 @@ Game.registerMod("autobuy", {
 
 		var cheapestProduct = [null, Infinity];
 		for(var i = 0; i < products.length; i++) {
+			if(mod.saveData.excludedBuildings.includes(products[i].id)) continue;
 			if(products[i].getSumPrice(bulkAmount) < cheapestProduct[1]) {
 				cheapestProduct = [products[i], products[i].getSumPrice(bulkAmount)];
 			}
@@ -257,6 +264,8 @@ Game.registerMod("autobuy", {
 		mod.context.appendOptionButton("Buy upgrades automatically", "App.mods['autobuy'].saveData.buyUpgrades=!App.mods['autobuy'].saveData.buyUpgrades;this.classList.toggle('off');", "buyUpgrades", null, "If turned on, upgrades will be considered when checking for cheapest option");
 		//Notifications
 		mod.context.appendOptionButton("Show Notifications", "App.mods['autobuy'].saveData.announcements=!App.mods['autobuy'].saveData.announcements; this.classList.toggle('off');", "announcements", null, "If turned on, notifications will be shown when the Autobuyer buys something");
+		//Excluding
+		mod.context.appendOptionButton("Pick excluded Buildings", "App.mods['autobuy'].context.openBuildingPicker()", null, null, "Select what Buildings the mod should ignore");
 		//Buying Timeline
 		mod.context.appendOptionButton("Create Buying Timeline", "App.mods['autobuy'].saveData.keepTimeline=!App.mods['autobuy'].saveData.keepTimeline; this.classList.toggle('off'); App.mods['autobuy'].saveData.keepTimeline ? (App.mods['autobuy'].context.generateTimelineString()) : null;", "keepTimeline", null, "This will show you a container of what you bought. (This may cause stutter when you bought a lot)");
 		if(mod.saveData.buyTimeline.length == 0 || !App.mods["autobuy"].saveData.keepTimeline) return;
@@ -320,5 +329,42 @@ Game.registerMod("autobuy", {
 	injectNextBuyContainer: () => {
 		let inject = requestTemplate('nextBuyContainer', App.mods["autobuy"].context.modDirectory);
 		l('storeTitle').parentNode.insertBefore(inject, l('storeTitle').nextSibling);
+	},
+	openBuildingPicker: () => {
+		/**
+		 * cheapestProduct[0].l.appendChild(nextContainer);
+				l('autoBuyNext').style.backgroundImage = "url(img/buildings.png?v=5)";
+				var offsetX = parseInt(cheapestProduct[0].l.querySelectorAll('.icon:not(.off)')[0].style.backgroundPositionX.replace('px', ''));
+				var offsetY = parseInt(cheapestProduct[0].l.querySelectorAll('.icon:not(.off)')[0].style.backgroundPositionY.replace('px', ''));
+				l('autoBuyNext').style.backgroundPosition = `${offsetX}px ${offsetY}px`;
+		 */
+		let products = "";
+
+		for(let product of Game.ObjectsById) {
+			let offsetX = product.l.querySelectorAll('.icon:not(.off)')[0].style.backgroundPositionX.replace('px', '')
+			let offsetY = product.l.querySelectorAll('.icon:not(.off)')[0].style.backgroundPositionY.replace('px', '')
+
+			products += `<div id="building-exclude-${product.id}" 
+			class="crate ${App.mods['autobuy'].saveData.excludedBuildings.includes(product.id) ? 'enabled' : ''}"; 
+			style="background-image:url(img/buildings.png?v=5); background-position: ${offsetX}px ${offsetY}px"
+			onclick="App.mods['autobuy'].context.toggleExcluded(${product.id}); document.getElementById('building-exclude-${product.id}').classList.toggle('enabled')">
+			</div>`
+		}
+
+		Game.Prompt(`<id PickBuilding>
+		<h3>Excluded Buildings</h3>
+		<div class="line"></div>
+		<div style="font-size:11px;opacity:0.7;">Highlighted Buildings will be excluded when autobuying</div>
+		<div class="line"></div>
+		${products}
+		`, [loc("Close")]);
+	},
+	toggleExcluded: (itemId) => {
+		if(App.mods["autobuy"].saveData.excludedBuildings.includes(itemId)) {
+			App.mods["autobuy"].saveData.excludedBuildings = App.mods["autobuy"].saveData.excludedBuildings.filter((building) => building !== itemId);
+		}
+		else {
+			App.mods["autobuy"].saveData.excludedBuildings.push(itemId);
+		}
 	}
 });
